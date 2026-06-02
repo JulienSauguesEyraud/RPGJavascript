@@ -53,85 +53,101 @@
 <style>
 .hud {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr);
-  gap: 10px;
-  align-items: center;
-  flex: 0 0 auto;
+  grid-template-columns: 1fr auto 1fr;
+
   width: 100%;
+  height: 100px;
+
+  padding: 10px 14px;
   box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.72);
-  color: #fff;
-  padding: 10px clamp(8px, 2vw, 18px);
+
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+
+  overflow: hidden;
+
+  align-items: stretch;
+  gap: 12px;
 }
 
 .stats {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px 12px;
+  flex-direction: column;
+  gap: 4px;
+
+  font-size: 13px;
   min-width: 0;
-  font-size: clamp(12px, 1.6vw, 15px);
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: 6px;
+
+  align-content: center;
+  justify-content: center;
+
+  height: fit-content;
+  align-self: center;
 }
 
 .actions button {
-  min-height: 34px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  padding: 6px 10px;
+  height: 30px;
+  line-height: 1;
+
   border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.2);
+
   background: #263244;
-  color: #fff;
-  padding: 0 10px;
-  font-size: clamp(12px, 1.5vw, 14px);
+  color: white;
+
+  cursor: pointer;
+
+  flex: 0 0 auto;
 }
 
 .actions button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
+  opacity: 0.4;
 }
 
 .actions button.active {
-  border-color: #7dd3fc;
   background: #0f5f7a;
-  box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.22);
+  border-color: #7dd3fc;
 }
 
 .log {
-  min-width: 0;
-  max-height: 96px;
-  overflow: auto;
-  font-size: clamp(11px, 1.4vw, 13px);
-}
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 
-.log-line {
-  overflow-wrap: anywhere;
+  height: 100%;
+  min-height: 0;
+
+  overflow-y: auto;
+
+  font-size: 12px;
   opacity: 0.9;
+
+  padding-left: 6px;
+
+  border-left: 1px solid rgba(255,255,255,0.08);
 }
 
-@media (max-width: 820px) {
+.log > div {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 700px) {
   .hud {
     grid-template-columns: 1fr;
-    align-items: stretch;
+    height: 180px;
   }
 
   .actions {
     justify-content: flex-start;
-  }
-}
-
-@media (max-width: 480px) {
-  .hud {
-    gap: 8px;
-    padding-block: 8px;
-  }
-
-  .actions button {
-    flex: 1 1 calc(50% - 6px);
-    padding: 0 8px;
   }
 }
 </style>
