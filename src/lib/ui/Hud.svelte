@@ -27,17 +27,17 @@
   <div class="actions">
     <button
       class:active={$selectedAction === 'move'}
-      disabled={!isPlayerTurn || player.move}
+      disabled={!isPlayerTurn || player.hasMoved}
       onclick={() => choose('move')}
     >Déplacer</button>
     <button
       class:active={$selectedAction === 'melee'}
-      disabled={!isPlayerTurn || player.attack}
+      disabled={!isPlayerTurn || player.hasAttacked}
       onclick={() => choose('melee')}
     >Corps à corps</button>
     <button
       class:active={$selectedAction === 'magic'}
-      disabled={!isPlayerTurn || player.attack}
+      disabled={!isPlayerTurn || player.hasAttacked}
       onclick={() => choose('magic')}
     >Magie</button>
     <button disabled={!isPlayerTurn} onclick={handlePass}>Passer</button>

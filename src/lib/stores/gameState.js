@@ -100,14 +100,14 @@ function createDummyAnimation(before, after) {
 }
 
 function hasFinishedActions(entity) {
-  return entity.move && entity.attack
+  return entity.hasMoved && entity.hasAttacked
 }
 
 function createDummyMoveAction(state) {
   const player = state.entities.player
   const dummy = state.entities.dummy
 
-  if (dummy.move || distance8(player, dummy) === 1) {
+  if (dummy.hasMoved || distance8(player, dummy) === 1) {
     return null
   }
 
@@ -132,7 +132,7 @@ async function runDummyTurn(state) {
   }
 
   if (
-    !next.entities.dummy.attack &&
+    !next.entities.dummy.hasAttacked &&
     distance8(next.entities.dummy, next.entities.player) === 1 &&
     canMelee(next, 'dummy', 'player')
   ) {
@@ -178,7 +178,7 @@ export async function dispatch(action) {
           gameState.set(next)
           return
         }
-        if (next.entities[id].move) {
+        if (next.entities[id].hasMoved) {
           next.log.push(`${id} a deja bouge ce tour`)
           gameState.set(next)
           return
@@ -199,7 +199,7 @@ export async function dispatch(action) {
         gameState.set(next)
         return
       }
-      if (next.entities[attackerId].attack) {
+      if (next.entities[attackerId].hasAttacked) {
         next.log.push(`${attackerId} a deja attaque ce tour`)
         gameState.set(next)
         return
@@ -218,7 +218,7 @@ export async function dispatch(action) {
         gameState.set(next)
         return
       }
-      if (next.entities[attackerId].attack) {
+      if (next.entities[attackerId].hasAttacked) {
         next.log.push(`${attackerId} a deja attaque ce tour`)
         gameState.set(next)
         return

@@ -19,7 +19,12 @@ export function applyMelee(state, attackerId, targetId) {
   const attacker = next.entities[attackerId]
   const dmg = 3 + (attacker.meleeBonus ?? 0)
   delete attacker.meleeBonus
-  attacker.attack = true
+  if (attacker.doubleAttack) {
+    attacker.doubleAttack = false
+  }
+  else {
+    attacker.hasAttacked = true
+  }
   next.entities[targetId].hp -= dmg
   next.log.push(`${attackerId} frappe ${targetId} pour ${dmg} dégâts`)
   return next

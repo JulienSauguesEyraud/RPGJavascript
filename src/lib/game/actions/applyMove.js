@@ -27,7 +27,7 @@ export function applyMove(state, id, to) {
   const next = structuredClone(state)
   next.entities[id].x = to.x
   next.entities[id].y = to.y
-  next.entities[id].move = true
+  next.entities[id].hasMoved = true
   next.log.push(`${id} se deplace en (${to.x},${to.y})`)
   return next
 }

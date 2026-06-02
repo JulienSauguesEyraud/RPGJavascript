@@ -11,4 +11,4 @@ export {
   applyTileEffect,
   createTileEffects,
   resolveTileTrigger,
-} from './events/index.js'
+} from './specialTiles/index.js'

@@ -1,4 +1,4 @@
-import { createTileEffects } from '../events/createTileEffects.js'
+import { createTileEffects } from '../specialTiles/createTileEffects.js'
 
 export function createInitialState() {
   const width = 8
@@ -11,8 +11,8 @@ export function createInitialState() {
     maxHp: 20,
     mp: 5,
     maxMp: 5,
-    move: false,
-    attack: false
+    hasMoved: false,
+    hasAttacked: false
   }
   const dummy = {
     id: 'dummy',
@@ -22,13 +22,14 @@ export function createInitialState() {
     maxHp: 15,
     mp: 0,
     maxMp: 0,
-    move: false,
-    attack: false
+    hasMoved: false,
+    hasAttacked: false
   }
   return {
     width,
     height,
     turn: 'player',
+    turnNumber: 1,
     entities: {
       player,
       dummy,
@@ -38,6 +39,7 @@ export function createInitialState() {
       height,
       blockedPositions: [player, dummy],
     }),
+    eventEffect: null,
     log: ['Début du combat'],
     seed: Date.now(),
   }

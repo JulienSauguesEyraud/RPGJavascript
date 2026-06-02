@@ -21,10 +21,17 @@ export function canMagic(state, attackerId, targetId) {
 
 export function applyMagic(state, attackerId, targetId) {
   const next = structuredClone(state)
+  const attacker = next.entities[attackerId]
   const cost = 2
-  const dmg = 5
-  next.entities[attackerId].mp -= cost
-  next.entities[attackerId].attack = true
+  const dmg = 5 + (attacker.magicBonus ?? 0)
+  delete attacker.magicBonus
+  attacker.mp -= cost
+  if (attacker.doubleAttack) {
+    attacker.doubleAttack = false
+  }
+  else {
+    attacker.hasAttacked = true
+  }
   next.entities[targetId].hp -= dmg
   next.log.push(`${attackerId} lance un sort sur ${targetId} pour ${dmg} dégâts (-${cost} MP)`)
   return next
