@@ -1,16 +1,12 @@
 <script>
-  import { dispatch, gameState, resetGame } from '../stores/gameState.js'
+  import { dispatch, gameState, resetGame, myPlayerId } from '../stores/gameState.js'
   import { selectedAction } from '../stores/gameUi.js'
 
-const currentPlayer = $derived($gameState.entities[$gameState.turn])
-const isPlayerTurn = true
+  const currentPlayer = $derived($gameState?.entities?.[$gameState?.turn])
+  const isMyTurn = $derived($gameState?.turn === $myPlayerId)
 
   function choose(action) {
     selectedAction.set(action)
-  }
-
-  function handleReset() {
-    resetGame()
   }
 
   function handlePass() {
@@ -24,6 +20,9 @@ const isPlayerTurn = true
     <div><strong>Joueur2</strong> HP: {$gameState.entities.player2.hp}/{$gameState.entities.player2.maxHp} MP: {$gameState.entities.player2.mp}</div>
     <div>Tour: {$gameState.turn}</div>
   </div>
+  {#if !isMyTurn}
+    <div class="waiting">En attente de l'adversaire…</div>
+  {:else}
   <div class="actions">
     <button
       class:active={$selectedAction === 'move'}
@@ -40,11 +39,11 @@ const isPlayerTurn = true
       disabled={currentPlayer.hasAttacked}
       onclick={() => choose('magic')}
     >Magie</button>
-    <button disabled={!isPlayerTurn} onclick={handlePass}>Passer</button>
-    <button onclick={handleReset}>Réinitialiser</button>
+    <button disabled={!isMyTurn} onclick={handlePass}>Passer</button>
   </div>
-  <div class="log">
-    {#each $gameState.log.slice(-5) as entry}
+  {/if}
+    <div class="log">
+    {#each ($gameState?.log ?? []).slice(-5) as entry}
       <div class="log-line">{entry}</div>
     {/each}
   </div>
