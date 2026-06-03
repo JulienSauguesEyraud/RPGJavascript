@@ -239,7 +239,7 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
       const px = position.x
       const py = position.y
       ctx.beginPath()
-      ctx.fillStyle = id === 'player' ? '#4cf' : '#f66'
+      ctx.fillStyle = id === 'player1' ? '#4cf' : '#f66'
       ctx.arc(px, py, tileSize * 0.35, 0, Math.PI * 2)
       ctx.fill()
       ctx.fillStyle = '#fff'
@@ -281,13 +281,13 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
     const state = getState()
     const selected = uiStores.selected
     if (selected === 'move') {
-      dispatch({ type: 'MOVE', payload: { id: 'player', to: tile } })
+      dispatch({ type: 'MOVE', payload: { id: state.turn, to: tile } })
     } 
     else if (selected === 'melee') {
       for (const id in state.entities) {
         const ent = state.entities[id]
-        if (ent.x === tile.x && ent.y === tile.y && id !== 'player') {
-          dispatch({ type: 'MELEE', payload: { attackerId: 'player', targetId: id } })
+        if (ent.x === tile.x && ent.y === tile.y && id !== state.turn) {
+          dispatch({ type: 'MELEE', payload: { attackerId: state.turn, targetId: id } })
           break
         }
       }
@@ -295,8 +295,8 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
     else if (selected === 'magic') {
       for (const id in state.entities) {
         const ent = state.entities[id]
-        if (ent.x === tile.x && ent.y === tile.y && id !== 'player') {
-          dispatch({ type: 'MAGIC', payload: { attackerId: 'player', targetId: id } })
+        if (ent.x === tile.x && ent.y === tile.y && id !== state.turn) {
+          dispatch({ type: 'MAGIC', payload: { attackerId: state.turn, targetId: id } })
           break
         }
       }

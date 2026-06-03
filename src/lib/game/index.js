@@ -3,7 +3,6 @@ export { canMove, applyMove } from './actions/applyMove.js'
 export { canMelee, applyMelee } from './actions/applyMeleeAttack.js'
 export { canMagic, applyMagic } from './actions/applyMagicAttack.js'
 export { endTurn } from './actions/endTurn.js'
-export { dummyAct } from './ai/dummyOpponent.js'
 export { distance8 } from './resolution/distance.js'
 export {
   TILE_EFFECT_TRIGGERS,

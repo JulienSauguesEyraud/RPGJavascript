@@ -75,85 +75,13 @@ function createPlayerAnimation(state, action) {
   return null
 }
 
-function createDummyAnimation(before, after) {
-  const beforeDummy = before.entities.dummy
-  const afterDummy = after.entities.dummy
-
-  if (beforeDummy.x !== afterDummy.x || beforeDummy.y !== afterDummy.y) {
-    return {
-      kind: 'move',
-      entityId: 'dummy',
-      from: { x: beforeDummy.x, y: beforeDummy.y },
-      to: { x: afterDummy.x, y: afterDummy.y },
-    }
-  }
-
-  if (after.entities.player.hp < before.entities.player.hp) {
-    return {
-      kind: 'melee',
-      from: { x: beforeDummy.x, y: beforeDummy.y },
-      to: { x: before.entities.player.x, y: before.entities.player.y },
-    }
-  }
-
-  return null
-}
-
 function hasFinishedActions(entity) {
   return entity.hasMoved && entity.hasAttacked
-}
-
-function createDummyMoveAction(state) {
-  const player = state.entities.player
-  const dummy = state.entities.dummy
-
-  if (dummy.hasMoved || distance8(player, dummy) === 1) {
-    return null
-  }
-
-  const dx = Math.sign(player.x - dummy.x)
-  const dy = Math.sign(player.y - dummy.y)
-  return { x: dummy.x + dx, y: dummy.y + (dx === 0 ? dy : 0) }
-}
-
-async function runDummyTurn(state) {
-  let next = structuredClone(state)
-
-  const moveTo = createDummyMoveAction(next)
-  if (moveTo && canMove(next, 'dummy', moveTo)) {
-    const beforeMove = next
-    next = applyMove(next, 'dummy', moveTo)
-    await playAnimation(createDummyAnimation(beforeMove, next))
-    gameState.set(next)
-  }
-
-  if (next.entities.player.hp <= 0 || next.entities.dummy.hp <= 0) {
-    return next
-  }
-
-  if (
-    !next.entities.dummy.hasAttacked &&
-    distance8(next.entities.dummy, next.entities.player) === 1 &&
-    canMelee(next, 'dummy', 'player')
-  ) {
-    const beforeAttack = next
-    next = applyMelee(next, 'dummy', 'player')
-    await playAnimation(createDummyAnimation(beforeAttack, next))
-    gameState.set(next)
-  }
-
-  next = endTurn(next)
-  gameState.set(next)
-  return next
 }
 
 async function finishTurn(next) {
   next = endTurn(next)
   gameState.set(next)
-
-  if (next.turn === 'dummy') {
-    next = await runDummyTurn(next)
-  }
 
   return next
 }
@@ -246,7 +174,7 @@ export async function dispatch(action) {
     await playAnimation(animation)
     gameState.set(next)
 
-    if (next.entities.player.hp <= 0 || next.entities.dummy.hp <= 0) {
+    if (next.entities.player1.hp <= 0 || next.entities.player2.hp <= 0) {
       resetGame()
       return
     }

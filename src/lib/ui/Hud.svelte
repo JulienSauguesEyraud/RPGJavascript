@@ -2,8 +2,8 @@
   import { dispatch, gameState, resetGame } from '../stores/gameState.js'
   import { selectedAction } from '../stores/gameUi.js'
 
-  const isPlayerTurn = $derived($gameState.turn === 'player')
-  const player = $derived($gameState.entities.player)
+const currentPlayer = $derived($gameState.entities[$gameState.turn])
+const isPlayerTurn = true
 
   function choose(action) {
     selectedAction.set(action)
@@ -14,30 +14,30 @@
   }
 
   function handlePass() {
-    dispatch({ type: 'PASS', payload: { id: 'player' } })
+    dispatch({ type: 'PASS', payload: { id: $gameState.turn } })
   }
 </script>
 
 <div class="hud">
   <div class="stats">
-    <div><strong>Joueur</strong> HP: {$gameState.entities.player.hp}/{$gameState.entities.player.maxHp} MP: {$gameState.entities.player.mp}</div>
-    <div><strong>Mannequin</strong> HP: {$gameState.entities.dummy.hp}/{$gameState.entities.dummy.maxHp}</div>
+    <div><strong>Joueur1</strong> HP: {$gameState.entities.player1.hp}/{$gameState.entities.player1.maxHp} MP: {$gameState.entities.player1.mp}</div>
+    <div><strong>Joueur2</strong> HP: {$gameState.entities.player2.hp}/{$gameState.entities.player2.maxHp} MP: {$gameState.entities.player2.mp}</div>
     <div>Tour: {$gameState.turn}</div>
   </div>
   <div class="actions">
     <button
       class:active={$selectedAction === 'move'}
-      disabled={!isPlayerTurn || player.hasMoved}
+      disabled={currentPlayer.hasMoved}
       onclick={() => choose('move')}
     >Déplacer</button>
     <button
       class:active={$selectedAction === 'melee'}
-      disabled={!isPlayerTurn || player.hasAttacked}
+      disabled={currentPlayer.hasAttacked}
       onclick={() => choose('melee')}
     >Corps à corps</button>
     <button
       class:active={$selectedAction === 'magic'}
-      disabled={!isPlayerTurn || player.hasAttacked}
+      disabled={currentPlayer.hasAttacked}
       onclick={() => choose('magic')}
     >Magie</button>
     <button disabled={!isPlayerTurn} onclick={handlePass}>Passer</button>
