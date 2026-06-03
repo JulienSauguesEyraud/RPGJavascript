@@ -5,6 +5,9 @@ import { createInitialState } from '../game/index.js'
 export const gameState = writable(createInitialState())
 export const animationEvents = writable(null)
 export const myPlayerId = writable(null)
+export const roomCode = writable(null)
+export const lobbyStatus = writable('idle') // 'idle' | 'waiting' | 'playing' | 'full' | 'error'
+export const lobbyError = writable(null)
 
 let socket = null
 let previousState = null
@@ -18,10 +21,8 @@ function detectAndEmitAnimations(prev, next) {
     if (!p || !e) continue
     if (e.x !== p.x || e.y !== p.y) {
       animationEvents.set({
-        kind: 'move',
-        entityId: id,
-        from: { x: p.x, y: p.y },
-        to: { x: e.x, y: e.y },
+        kind: 'move', entityId: id,
+        from: { x: p.x, y: p.y }, to: { x: e.x, y: e.y },
         duration: ANIMATION_DURATIONS.move,
         sequence: ++animationSequence,
       })
@@ -45,43 +46,54 @@ function detectAndEmitAnimations(prev, next) {
   }
 }
 
-function getSocket() {
-  if (!browser) return null
-  if (socket) return socket
-
+function initSocket() {
   import('socket.io-client').then(({ io }) => {
     socket = io('http://localhost:3001')
 
-    socket.on('connect', () => {
-      if (sessionStorage.getItem('rpg_joined')) return
-      sessionStorage.setItem('rpg_joined', '1')
-      socket.emit('join')
+    socket.on('created', (code) => {
+      roomCode.set(code)
+      lobbyStatus.set('waiting') // attend player2
     })
 
-    socket.on('disconnect', () => {
-      sessionStorage.removeItem('rpg_joined')
+    socket.on('joined', (code) => {
+      roomCode.set(code)
+      lobbyStatus.set('playing')
     })
 
     socket.on('assigned', (slot) => {
       myPlayerId.set(slot)
     })
 
-    socket.on('full', () => {
-      console.warn('Partie pleine')
+    socket.on('opponent_joined', () => {
+      lobbyStatus.set('playing')
+    })
+
+    socket.on('opponent_left', () => {
+      lobbyStatus.set('waiting')
+    })
+
+    socket.on('error', (msg) => {
+      lobbyError.set(msg)
+      lobbyStatus.set('error')
     })
 
     socket.on('state', (newState) => {
+      lobbyStatus.set('playing')
       if (previousState) detectAndEmitAnimations(previousState, newState)
       previousState = newState
       gameState.set(newState)
     })
   })
-
-  return null
 }
 
-if (browser) {
-  getSocket()
+if (browser) initSocket()
+
+export function createRoom() {
+  if (socket) socket.emit('create')
+}
+
+export function joinRoom(code) {
+  if (socket) socket.emit('join', code.trim().toUpperCase())
 }
 
 export function dispatch(action) {
