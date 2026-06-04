@@ -14,6 +14,7 @@
   }
 </script>
 
+<div class="lastLog">{$gameState.log[$gameState.log.length - 1]}</div>
 <div class="hud">
   <div class="stats">
     <div><strong>Joueur1</strong> HP: {$gameState.entities.player1.hp}/{$gameState.entities.player1.maxHp} MP: {$gameState.entities.player1.mp}</div>
@@ -137,6 +138,21 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.lastLog {
+  position: fixed;
+
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  padding: 12px 24px;
+  color: rgba(255,255,255,0.5);
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+  pointer-events: none;
 }
 
 @media (max-width: 700px) {
