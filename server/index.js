@@ -13,7 +13,6 @@ import {
 const httpServer = createServer()
 const io = new Server(httpServer, { cors: { origin: '*' } })
 
-// rooms[code] = { state, slots: { player1: socketId|null, player2: socketId|null } }
 const rooms = {}
 
 function generateCode() {
@@ -62,7 +61,6 @@ io.on('connection', (socket) => {
     socket.emit('joined', code)
     socket.emit('assigned', 'player2')
     socket.emit('state', room.state)
-    // Prévenir player1 que l'adversaire est arrivé
     io.to(room.slots.player1).emit('opponent_joined')
     console.log(`Room ${code} : player2 = ${socket.id}`)
   })
@@ -132,7 +130,6 @@ io.on('connection', (socket) => {
     room.slots[playerId] = null
     io.to(code).emit('opponent_left')
     console.log(`${playerId} quitté room ${code}`)
-    // Nettoyer la room si les deux sont partis
     if (!room.slots.player1 && !room.slots.player2) {
       delete rooms[code]
       console.log(`Room ${code} supprimée`)

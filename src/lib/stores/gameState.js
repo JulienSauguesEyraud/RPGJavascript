@@ -52,7 +52,7 @@ function initSocket() {
 
     socket.on('created', (code) => {
       roomCode.set(code)
-      lobbyStatus.set('waiting') // attend player2
+      lobbyStatus.set('waiting')
     })
 
     socket.on('joined', (code) => {

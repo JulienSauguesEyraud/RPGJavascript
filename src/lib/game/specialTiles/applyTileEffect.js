@@ -1,4 +1,4 @@
-import { TILE_EFFECT_TYPES } from './tileEffectTypes.js'
+import { TILE_EFFECT_TYPES } from './index.js'
 
 export function applyTileEffect(state, entityId, effect) {
   const next = structuredClone(state)

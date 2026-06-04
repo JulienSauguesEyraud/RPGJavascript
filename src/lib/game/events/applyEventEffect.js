@@ -1,4 +1,4 @@
-import { EVENT_EFFECT_TYPES } from './eventEffectTypes.js'
+import { EVENT_EFFECT_TYPES } from './index.js'
 
 export function applyEventEffect(state, entityId, effect) {
   const next = structuredClone(state)

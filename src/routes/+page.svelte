@@ -1,8 +1,8 @@
 <script>
   import { onMount } from 'svelte'
-  import { gameState, dispatch, resetGame, myPlayerId,
+  import { gameState, dispatch,
            roomCode, lobbyStatus, lobbyError,
-           createRoom, joinRoom, animationEvents } from '../lib/stores/gameState.js'
+           createRoom, joinRoom } from '../lib/stores/gameState.js'
   import { selectedAction } from '../lib/stores/gameUi.js'
   import { initGameCanvas } from '../lib/render/canvas.js'
   import Hud from '../lib/ui/Hud.svelte'

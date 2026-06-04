@@ -1,4 +1,4 @@
-import { createTileEffects } from '../specialTiles/createTileEffects.js'
+import { createTileEffects } from '../index.js'
 
 export function createInitialState() {
   const width = 8

@@ -1,4 +1,4 @@
-import { applyTileEffect } from './applyTileEffect.js'
+import { applyTileEffect } from './index.js'
 
 export function resolveTileTrigger(state, entityId, trigger) {
   const entity = state.entities[entityId]

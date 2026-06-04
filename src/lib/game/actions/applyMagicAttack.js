@@ -1,4 +1,4 @@
-import { distance8 } from '../resolution/distance.js'
+import { distance8 } from '../index.js'
 
 export function canMagic(state, attackerId, targetId) {
   const attacker = state.entities[attackerId]

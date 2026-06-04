@@ -9,5 +9,11 @@ export {
   TILE_EFFECT_TYPES,
   applyTileEffect,
   createTileEffects,
-  resolveTileTrigger,
+  resolveTileTrigger
 } from './specialTiles/index.js'
+export {
+  EVENT_EFFECT_TYPES,
+  createEventEffect,
+  applyEventEffect,
+  removeEventEffect
+} from './events/index.js'

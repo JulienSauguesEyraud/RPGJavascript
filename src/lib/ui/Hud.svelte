@@ -1,5 +1,5 @@
 <script>
-  import { dispatch, gameState, resetGame, myPlayerId } from '../stores/gameState.js'
+  import { dispatch, gameState, myPlayerId } from '../stores/gameState.js'
   import { selectedAction } from '../stores/gameUi.js'
 
   const currentPlayer = $derived($gameState?.entities?.[$gameState?.turn])

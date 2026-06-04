@@ -1,4 +1,4 @@
-import { distance8 } from '../resolution/distance.js'
+import { distance8 } from '../index.js'
 
 export function canMove(state, id, to) {
   const actor = state.entities[id]

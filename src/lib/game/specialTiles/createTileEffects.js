@@ -1,4 +1,4 @@
-import { TILE_EFFECT_TRIGGERS, TILE_EFFECT_TYPES } from './tileEffectTypes.js'
+import { TILE_EFFECT_TRIGGERS, TILE_EFFECT_TYPES } from './index.js'
 
 const TILE_EFFECT_AMOUNTS = {
   [TILE_EFFECT_TYPES.HEAL]: 3,

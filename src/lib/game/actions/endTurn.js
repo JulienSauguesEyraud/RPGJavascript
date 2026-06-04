@@ -1,5 +1,5 @@
-import { applyEventEffect, removeEventEffect } from '../events/applyEventEffect.js'
-import { createEventEffect } from '../events/createEventEffects.js'
+import { applyEventEffect, removeEventEffect } from '../index.js'
+import { createEventEffect } from '../index.js'
 
 export function endTurn(state) {
   let next = structuredClone(state)

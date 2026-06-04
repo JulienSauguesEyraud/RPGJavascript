@@ -1,4 +1,4 @@
-import { EVENT_EFFECT_TYPES } from './eventEffectTypes.js'
+import { EVENT_EFFECT_TYPES } from './index.js'
 
 const EVENT_EFFECT_AMOUNTS = {
   [EVENT_EFFECT_TYPES.BOOST_MELEE]: 2,
