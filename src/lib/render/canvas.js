@@ -41,17 +41,21 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
         }
 
         if (curr.hp < prev.hp) {
-          const attacker = prevState.entities[prevState.turn]
-          if (attacker && attacker !== prev) {
+          const attacker = Object.values(prevState.entities).find(e => {
+            const currE = state.entities[e.id]
+            return currE && currE.lastAttacked > e.lastAttacked
+          })
+          if (attacker && attacker.id !== id) {
             const from = tileCenter(attacker.x, attacker.y)
             const to = tileCenter(prev.x, prev.y)
-            const dist = Math.max(Math.abs(attacker.x - prev.x), Math.abs(attacker.y - prev.y))
+            const attackerCurr = state.entities[attacker.id]
+            const isMagic = attackerCurr && attackerCurr.mp < attacker.mp
             effects.push({
-              kind: dist <= 1 ? 'melee' : 'magic',
+              kind: isMagic ? 'magic' : 'melee',
               from,
               to,
               start: performance.now(),
-              duration: dist <= 1 ? 200 : 400,
+              duration: isMagic ? 400 : 200,
             })
           }
         }
