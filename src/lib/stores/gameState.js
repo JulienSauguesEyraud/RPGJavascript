@@ -10,8 +10,6 @@ export const lobbyError = writable(null)
 
 let socket = null
 let previousState = null
-let animationSequence = 0
-const ANIMATION_DURATIONS = { move: 260, melee: 180, magic: 420 }
 
 function initSocket() {
   import('socket.io-client').then(({ io }) => {
@@ -64,8 +62,4 @@ export function joinRoom(code) {
 
 export function dispatch(action) {
   if (socket) socket.emit('action', action)
-}
-
-export function resetGame() {
-  if (socket) socket.emit('reset')
 }
