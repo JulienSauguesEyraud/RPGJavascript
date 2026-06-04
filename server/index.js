@@ -5,43 +5,84 @@ import {
   canMove, applyMove,
   canMelee, applyMelee,
   canMagic, applyMagic,
-  endTurn,
   TILE_EFFECT_TRIGGERS,
   resolveTileTrigger,
+  createEventEffect,
+  applyEventEffect,
+  removeEventEffect,
 } from '../src/lib/game/index.js'
 
 const httpServer = createServer()
 const io = new Server(httpServer, { cors: { origin: '*' } })
 
+const COOLDOWN_MOVE   = 3000
+const COOLDOWN_ATTACK = 5000
+const EVENT_INTERVAL  = 20000
+const EVENT_DURATION  = 5000
+
 const rooms = {}
 
 function generateCode() {
-  return Math.random().toString(36).slice(2, 7).toUpperCase()
+  let code = Math.random().toString(36).slice(2, 7).toUpperCase()
+  while (rooms[code]) code = Math.random().toString(36).slice(2, 7).toUpperCase()
+  return code
 }
 
 function broadcastRoom(code) {
   const room = rooms[code]
   if (!room) return
-  io.to(code).emit('state', room.state)
+  io.to(code).emit('state', { ...room.state, serverTime: Date.now() })
+}
+
+function startRoomLoop(code) {
+  const room = rooms[code]
+  if (!room) return
+
+  room.interval = setInterval(() => {
+    if (!rooms[code]) { clearInterval(room.interval); return }
+    const now = Date.now()
+    let changed = false
+
+    if (!room.state.activeEvent && now - room.state.lastEventAt >= EVENT_INTERVAL) {
+      room.state.activeEvent = createEventEffect()
+      room.state.activeEvent.startedAt = now
+      room.state = applyEventEffect(room.state, 'player1', room.state.activeEvent)
+      room.state = applyEventEffect(room.state, 'player2', room.state.activeEvent)
+      room.state.log.push(`Événement : ${room.state.activeEvent.type} (5 sec)`)
+      changed = true
+    }
+
+    if (room.state.activeEvent && now - room.state.activeEvent.startedAt >= EVENT_DURATION) {
+      room.state = removeEventEffect(room.state, 'player1', room.state.activeEvent)
+      room.state = removeEventEffect(room.state, 'player2', room.state.activeEvent)
+      room.state.log.push(`Événement ${room.state.activeEvent.type} terminé`)
+      room.state.activeEvent = null
+      room.state.lastEventAt = now
+      changed = true
+    }
+
+    if (changed) broadcastRoom(code)
+  }, 1000)
 }
 
 io.on('connection', (socket) => {
   console.log('connexion', socket.id)
 
   socket.on('create', () => {
-    let code = generateCode()
-    while (rooms[code]) code = generateCode()
+    const code = generateCode()
+    const state = createInitialState()
+    state.lastEventAt = Date.now()
     rooms[code] = {
-      state: createInitialState(),
+      state,
       slots: { player1: socket.id, player2: null },
+      interval: null,
     }
     socket.join(code)
     socket.data.code = code
     socket.data.playerId = 'player1'
     socket.emit('created', code)
     socket.emit('assigned', 'player1')
-    socket.emit('state', rooms[code].state)
-    console.log(`Room ${code} créée par ${socket.id}`)
+    socket.emit('state', { ...rooms[code].state, serverTime: Date.now() })
   })
 
   socket.on('join', (code) => {
@@ -60,105 +101,101 @@ io.on('connection', (socket) => {
     socket.data.playerId = 'player2'
     socket.emit('joined', code)
     socket.emit('assigned', 'player2')
-    socket.emit('state', room.state)
+    socket.emit('state', { ...room.state, serverTime: Date.now() })
     io.to(room.slots.player1).emit('opponent_joined')
-    console.log(`Room ${code} : player2 = ${socket.id}`)
+    startRoomLoop(code)
   })
 
   socket.on('action', (action) => {
-    const code = socket.data.code
+    const code     = socket.data.code
     const playerId = socket.data.playerId
-    const room = rooms[code]
-    if (!room || room.state.turn !== playerId) return
+    const room     = rooms[code]
+    if (!room) return
 
-    let next = structuredClone(room.state)
+    const now    = Date.now()
+    let next     = structuredClone(room.state)
+    const entity = next.entities[playerId]
+    if (!entity) return
 
     if (action.type === 'MOVE') {
-      const { id, to } = action.payload
-      if (id !== playerId) return
-      if (next.entities[id].hasMoved) {
-        next.log.push('Vous vous êtes déjà déplacé durant ce tour')
-        if (id === 'player1') {
+      const { to } = action.payload
+      if (now - entity.lastMoved < COOLDOWN_MOVE) {
+        next.log.push('Attendez avant de pouvoir vous déplacer à nouveau')
+        if (playerId === 'player1') {
           io.to(room.slots.player1).emit('state', next)
         }
-        else if (id === 'player2') {
+        else if (playerId === 'player2') {
           io.to(room.slots.player2).emit('state', next)
         }
         return
       }
-      if (!canMove(next, id, to)) {
-        if (id === 'player1') {
+      if (!canMove(next, playerId, to)) {
+        if (playerId === 'player1') {
           io.to(room.slots.player1).emit('state', next)
         }
-        else if (id === 'player2') {
+        else if (playerId === 'player2') {
           io.to(room.slots.player2).emit('state', next)
         }
         return
       }
-      next = applyMove(next, id, to)
-      next = resolveTileTrigger(next, id, TILE_EFFECT_TRIGGERS.ON_ENTER)
+      next = applyMove(next, playerId, to)
+      next.entities[playerId].lastMoved = now
+      next = resolveTileTrigger(next, playerId, TILE_EFFECT_TRIGGERS.ON_ENTER)
     } 
     else if (action.type === 'MELEE') {
-      const { attackerId, targetId } = action.payload
-      if (attackerId !== playerId) return
-      if (next.entities[attackerId].hasAttacked) {
-        next.log.push('Vous avez déjà attaqué durant ce tour')
-        if (attackerId === 'player1') {
+      const { targetId } = action.payload
+      if (now - entity.lastAttacked < COOLDOWN_ATTACK) {
+        next.log.push('Attendez avant de pouvoir attaquer à nouveau')
+        if (playerId === 'player1') {
           io.to(room.slots.player1).emit('state', next)
         }
-        else if (attackerId === 'player2') {
+        else if (playerId === 'player2') {
           io.to(room.slots.player2).emit('state', next)
         }
         return
       }
-      if (!canMelee(next, attackerId, targetId)) {
-        if (attackerId === 'player1') {
+      if (!canMelee(next, playerId, targetId)) {
+        if (playerId === 'player1') {
           io.to(room.slots.player1).emit('state', next)
         }
-        else if (attackerId === 'player2') {
+        else if (playerId === 'player2') {
           io.to(room.slots.player2).emit('state', next)
         }
         return
       }
-      next = applyMelee(next, attackerId, targetId)
+      next = applyMelee(next, playerId, targetId)
+      next.entities[playerId].lastAttacked = now
     } 
     else if (action.type === 'MAGIC') {
-      const { attackerId, targetId } = action.payload
-      if (attackerId !== playerId) return
-      if (next.entities[attackerId].hasAttacked) {
-        next.log.push('Vous avez déjà attaqué durant ce tour')
-        if (attackerId === 'player1') {
+      const { targetId } = action.payload
+      if (now - entity.lastAttacked < COOLDOWN_ATTACK) {
+        next.log.push('Attendez avant de pouvoir attaquer à nouveau')
+        if (playerId === 'player1') {
           io.to(room.slots.player1).emit('state', next)
         }
-        else if (attackerId === 'player2') {
+        else if (playerId === 'player2') {
           io.to(room.slots.player2).emit('state', next)
         }
         return
       }
-      if (!canMagic(next, attackerId, targetId)) {
-        if (attackerId === 'player1') {
+      if (!canMagic(next, playerId, targetId)) {
+        if (playerId === 'player1') {
           io.to(room.slots.player1).emit('state', next)
         }
-        else if (attackerId === 'player2') {
+        else if (playerId === 'player2') {
           io.to(room.slots.player2).emit('state', next)
         }
         return
       }
-      next = applyMagic(next, attackerId, targetId)
-    } 
-    else if (action.type === 'PASS') {
-      next.log.push(`${playerId} passe son tour`)
-      next = endTurn(next)
-    } 
+      next = applyMagic(next, playerId, targetId)
+      next.entities[playerId].lastAttacked = now
+    }
     else return
 
-    const actor = next.entities[playerId]
-    if (actor?.hasMoved && actor?.hasAttacked) {
-      next = endTurn(next)
-    }
-
-    if (next.entities.player1.hp <= 0 || next.entities.player2.hp <= 0) {
-      next = createInitialState()
+    if (next.entities.player1?.hp <= 0 || next.entities.player2?.hp <= 0) {
+      const fresh = createInitialState()
+      fresh.lastEventAt = Date.now()
+      next = fresh
     }
 
     room.state = next
@@ -166,21 +203,26 @@ io.on('connection', (socket) => {
   })
 
   socket.on('reset', () => {
-    const code = socket.data.code
-    const room = rooms[code]
+    const room = rooms[socket.data.code]
     if (!room) return
-    room.state = createInitialState()
-    broadcastRoom(code)
+    const fresh = createInitialState()
+    fresh.lastEventAt = Date.now()
+    room.state = fresh
+    broadcastRoom(socket.data.code)
   })
 
   socket.on('disconnect', () => {
     const code = socket.data.code
     const room = rooms[code]
     if (!room) return
-    const playerId = socket.data.playerId
-    room.slots[playerId] = null
-    io.to(code).emit('opponent_left')
-    console.log(`${playerId} quitté room ${code}`)
+    const wasPlayer = room.slots.player1 === socket.id ? 'player1'
+        : room.slots.player2 === socket.id ? 'player2'
+            : null
+    if (wasPlayer) {
+      room.slots[wasPlayer] = null
+      clearInterval(room.interval)
+      io.to(code).emit('opponent_left')
+    }
     if (!room.slots.player1 && !room.slots.player2) {
       delete rooms[code]
       console.log(`Room ${code} supprimée`)

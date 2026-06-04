@@ -11,8 +11,8 @@ export function createInitialState() {
     maxHp: 20,
     mp: 5,
     maxMp: 5,
-    hasMoved: false,
-    hasAttacked: false
+    lastMoved: 0,
+    lastAttacked: 0,
   }
   const player2 = {
     id: 'player2',
@@ -22,24 +22,20 @@ export function createInitialState() {
     maxHp: 20,
     mp: 5,
     maxMp: 5,
-    hasMoved: false,
-    hasAttacked: false
+    lastMoved: 0,
+    lastAttacked: 0,
   }
   return {
     width,
     height,
-    turn: 'player1',
-    turnNumber: 1,
-    entities: {
-      player1,
-      player2,
-    },
+    entities: { player1, player2 },
     tileEffects: createTileEffects({
       width,
       height,
       blockedPositions: [player1, player2],
     }),
-    eventEffect: null,
+    activeEvent: null,
+    lastEventAt: 0,
     log: ['Début du combat'],
     seed: Date.now(),
   }

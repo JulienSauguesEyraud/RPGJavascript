@@ -7,6 +7,10 @@ export function canMelee(state, attackerId, targetId) {
     state.log.push('Attaquant ou cible introuvable')
     return false
   }
+  if(attackerId === targetId) {
+    state.log.push('Vous ne pouvez pas vous attaquer vous même')
+    return false
+  }
   if (distance8(attacker, target) !== 1) {
     state.log.push('Cible hors de portée')
     return false
