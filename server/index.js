@@ -76,23 +76,74 @@ io.on('connection', (socket) => {
     if (action.type === 'MOVE') {
       const { id, to } = action.payload
       if (id !== playerId) return
-      if (next.entities[id].hasMoved) return
-      if (!canMove(next, id, to)) return
+      if (next.entities[id].hasMoved) {
+        next.log.push('Vous vous êtes déjà déplacé durant ce tour')
+        if (id === 'player1') {
+          io.to(room.slots.player1).emit('state', next)
+        }
+        else if (id === 'player2') {
+          io.to(room.slots.player2).emit('state', next)
+        }
+        return
+      }
+      if (!canMove(next, id, to)) {
+        if (id === 'player1') {
+          io.to(room.slots.player1).emit('state', next)
+        }
+        else if (id === 'player2') {
+          io.to(room.slots.player2).emit('state', next)
+        }
+        return
+      }
       next = applyMove(next, id, to)
       next = resolveTileTrigger(next, id, TILE_EFFECT_TRIGGERS.ON_ENTER)
     } 
     else if (action.type === 'MELEE') {
       const { attackerId, targetId } = action.payload
       if (attackerId !== playerId) return
-      if (next.entities[attackerId].hasAttacked) return
-      if (!canMelee(next, attackerId, targetId)) return
+      if (next.entities[attackerId].hasAttacked) {
+        next.log.push('Vous avez déjà attaqué durant ce tour')
+        if (attackerId === 'player1') {
+          io.to(room.slots.player1).emit('state', next)
+        }
+        else if (attackerId === 'player2') {
+          io.to(room.slots.player2).emit('state', next)
+        }
+        return
+      }
+      if (!canMelee(next, attackerId, targetId)) {
+        if (attackerId === 'player1') {
+          io.to(room.slots.player1).emit('state', next)
+        }
+        else if (attackerId === 'player2') {
+          io.to(room.slots.player2).emit('state', next)
+        }
+        return
+      }
       next = applyMelee(next, attackerId, targetId)
     } 
     else if (action.type === 'MAGIC') {
       const { attackerId, targetId } = action.payload
       if (attackerId !== playerId) return
-      if (next.entities[attackerId].hasAttacked) return
-      if (!canMagic(next, attackerId, targetId)) return
+      if (next.entities[attackerId].hasAttacked) {
+        next.log.push('Vous avez déjà attaqué durant ce tour')
+        if (attackerId === 'player1') {
+          io.to(room.slots.player1).emit('state', next)
+        }
+        else if (attackerId === 'player2') {
+          io.to(room.slots.player2).emit('state', next)
+        }
+        return
+      }
+      if (!canMagic(next, attackerId, targetId)) {
+        if (attackerId === 'player1') {
+          io.to(room.slots.player1).emit('state', next)
+        }
+        else if (attackerId === 'player2') {
+          io.to(room.slots.player2).emit('state', next)
+        }
+        return
+      }
       next = applyMagic(next, attackerId, targetId)
     } 
     else if (action.type === 'PASS') {

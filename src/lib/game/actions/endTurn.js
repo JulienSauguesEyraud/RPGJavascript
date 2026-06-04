@@ -21,12 +21,13 @@ export function endTurn(state) {
     next.turnNumber++
   }
 
+  next.log.push(`Tour de ${next.turn}`)
+
   if (next.turnNumber % 3 === 0 && !next.activeEvent) {
     next.activeEvent = createEventEffect()
     next = applyEventEffect(next, 'player1', next.activeEvent)
     next = applyEventEffect(next, 'player2', next.activeEvent)
     next.log.push(`Nouvel événement : ${next.activeEvent.type}`)
   }
-  next.log.push(`Tour de ${next.turn}`)
   return next
 }
