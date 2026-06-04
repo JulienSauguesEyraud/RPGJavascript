@@ -101,31 +101,38 @@
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     width: 100%;
-    padding: 10px 14px;
+    padding: 10px;
     box-sizing: border-box;
     background: rgba(0,0,0,0.75);
-    color: white;
-    gap: 12px;
     min-height: 90px;
   }
-  .stats { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
-  .event-zone { margin-top: 4px; }
-  .event-active { color: #ffd37a; font-weight: bold; font-size: 12px; }
-  .event-waiting { opacity: 0.5; font-size: 12px; }
+  .stats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .event-active {
+    color: #ffd37a;
+    font-weight: bold;
+    font-size: 12px;
+  }
+  .event-waiting {
+    opacity: 0.5;
+    font-size: 12px;
+  }
   .bar {
     height: 4px;
     background: rgba(255,255,255,0.1);
     border-radius: 2px;
     margin-top: 2px;
-    overflow: hidden;
   }
   .bar-fill {
     height: 100%;
     border-radius: 2px;
     transition: width 0.1s linear;
   }
-  .bar-fill.move        { background: #7dd3fc; }
-  .bar-fill.attack      { background: #f87171; }
+  .bar-fill.move        { background: #296f21; }
+  .bar-fill.attack      { background: #8c20cc; }
   .bar-fill.event       { background: #ffd37a; }
   .bar-fill.next-event  { background: rgba(255,211,122,0.3); }
   .actions {
@@ -133,13 +140,8 @@
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
-    justify-content: center;
   }
   .action-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
     min-width: 90px;
   }
   .actions button {
@@ -151,11 +153,20 @@
     background: #263244;
     color: white;
     cursor: pointer;
-    font-size: 13px;
   }
-  .actions button:disabled { opacity: 0.4; cursor: not-allowed; }
-  .actions button.active   { background: #0f5f7a; border-color: #7dd3fc; }
-  .cd-label { font-size: 10px; opacity: 0.7; }
+  .actions button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .actions button.active {
+    background: #0f5f7a;
+    border-color: #7dd3fc;
+  }
+  .cd-label {
+    font-size: 10px;
+    opacity: 0.7;
+  }
+  /*refaire css depuis là*/
   .log {
     display: flex;
     flex-direction: column;
