@@ -9,7 +9,7 @@ export function canFireball(state, attackerId, targetId) {
   }
   const cost = 3
   if (attacker.mp < cost) {
-    state.log.push('MP insuffisant pour lancer un sort')
+    state.log.push('MP insuffisant pour lancer ce sort')
     return false
   }
   if(attackerId === targetId) {
@@ -50,7 +50,7 @@ export function canThunder(state, attackerId, targetId) {
   }
   const cost = 10
   if (attacker.mp < cost) {
-    state.log.push('MP insuffisant pour lancer un sort')
+    state.log.push('MP insuffisant pour lancer ce sort')
     return false
   }
   if(attackerId === targetId) {

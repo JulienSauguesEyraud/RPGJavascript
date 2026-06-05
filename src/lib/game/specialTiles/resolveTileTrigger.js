@@ -20,9 +20,13 @@ export function resolveTileTrigger(state, entityId, trigger) {
 
   const next = applyTileEffect(state, entityId, effect)
   next.tileEffects = next.tileEffects.map(tileEffect =>
-    tileEffect.id === effect.id
-      ? { ...tileEffect, consumed: true }
-      : tileEffect
+      tileEffect.id === effect.id
+          ? {
+            ...tileEffect,
+            consumed: true,
+            activatedAt: Date.now(),
+          }
+          : tileEffect
   )
 
   return next

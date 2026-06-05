@@ -165,18 +165,31 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
       }
     }
 
+    const FLASH_DURATION = 1000
+
     for (const effect of state.tileEffects ?? []) {
-      if (effect.consumed) continue
+      if (!effect.activatedAt) continue
+
+      const elapsed = Date.now() - effect.activatedAt
+
+      if (elapsed > FLASH_DURATION) continue
+
+      const alpha = (1 - elapsed / FLASH_DURATION) * 0.6
+
       context.fillStyle =
-          effect.type === 'heal'        ? 'rgba(80,220,130,0.4)' :
-              effect.type === 'mana'        ? 'rgba(90,150,255,0.4)' :
-                  effect.type === 'boost_melee' ? 'rgba(245,210,80,0.4)' :
-                      'rgba(255,110,90,0.4)'
+          effect.type === 'heal'
+              ? `rgba(80,220,130,${alpha})`
+              : effect.type === 'mana'
+                  ? `rgba(90,150,255,${alpha})`
+                  : effect.type === 'boost_melee'
+                      ? `rgba(245,210,80,${alpha})`
+                      : `rgba(255,110,90,${alpha})`
+
       context.fillRect(
-          effect.x * tileSize + 4,
-          effect.y * tileSize + 4,
-          tileSize - 8,
-          tileSize - 8,
+          effect.x * tileSize,
+          effect.y * tileSize,
+          tileSize,
+          tileSize,
       )
     }
 
