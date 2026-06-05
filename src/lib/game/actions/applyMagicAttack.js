@@ -64,7 +64,7 @@ export function applyThunder(state, attackerId, targetId) {
   const next = structuredClone(state)
   const attacker = next.entities[attackerId]
   const cost = 10
-  const dmg = 18 + (attacker.magicBonus ?? 0)
+  const dmg = 14 + (attacker.magicBonus ?? 0)
   delete attacker.magicBonus
   attacker.mp -= cost
   if (attacker.doubleAttack) {
