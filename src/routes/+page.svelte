@@ -69,8 +69,11 @@
 
 <style>
   :global(html), :global(body) {
-    margin: 0; width: 100%; height: 100%; overflow: hidden;
-    background: #111; color: white;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: #111;
+    color: white;
     font-family: sans-serif;
   }
 
@@ -83,7 +86,10 @@
     gap: 24px;
   }
 
-  h1 { font-size: 2.5rem; margin: 0; }
+  h1 {
+    font-size: 2.5rem;
+    margin: 0;
+  }
 
   .lobby-actions {
     display: flex;
@@ -139,15 +145,11 @@
   .error { color: #f87171; }
 
   .page {
-    position: relative;
     display: flex;
     flex-direction: column;
     width: 100%;
     height: 100dvh;
-    min-height: 0;
   }
-
-  .page.hidden { display: none; }
 
   .arena {
     display: grid;
@@ -158,7 +160,6 @@
   }
 
   canvas {
-    display: block;
     max-width: 100%;
     max-height: 100%;
     background: #001;
@@ -166,14 +167,12 @@
   .room-badge {
   position: absolute;
   top: 10px;
-  left: 12px;
+  left: 10px;
   background: rgba(0,0,0,0.6);
   color: #7dd3fc;
-  font-size: 0.85rem;
-  padding: 4px 10px;
+  padding: 4px 8px;
   border-radius: 6px;
   border: 1px solid rgba(125, 211, 252, 0.25);
-  z-index: 10;
   pointer-events: none;
 }
 </style>

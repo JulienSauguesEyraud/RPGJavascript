@@ -166,15 +166,10 @@
     font-size: 10px;
     opacity: 0.7;
   }
-  /*refaire css depuis là*/
   .log {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
     font-size: 12px;
     opacity: 0.9;
     padding-left: 6px;
-    border-left: 1px solid rgba(255,255,255,0.08);
     overflow: hidden;
   }
   .log > div {
@@ -188,8 +183,6 @@
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 9999;
-    padding: 12px 24px;
     color: rgba(255,255,255,0.5);
     font-size: 2rem;
     font-weight: bold;
