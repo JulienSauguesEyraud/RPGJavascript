@@ -18,6 +18,7 @@ const ATTACK_VISUALS = {
       context.restore()
     },
   },
+
   fireball: {
     duration: 400,
     draw(context, fx, t, tileSize) {
@@ -33,9 +34,9 @@ const ATTACK_VISUALS = {
       context.restore()
     },
   },
+
   thunder: {
     duration: 350,
-
     draw(context, fx, t, tileSize) {
       const alpha = 1 - t
 
@@ -49,9 +50,9 @@ const ATTACK_VISUALS = {
 
       context.save()
       context.globalAlpha = alpha
-
       context.strokeStyle = '#7af'
       context.lineWidth = 3
+
       context.beginPath()
       context.moveTo(startX, startY)
       context.lineTo(startX + offset, midY1)
@@ -116,13 +117,34 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
           })
         }
 
+        if (curr.x !== prev.x || curr.y !== prev.y) {
+          const tileEffect = state.tileEffects?.find(e =>
+              e.x === curr.x &&
+              e.y === curr.y &&
+              e.activatedAt && Date.now() - e.activatedAt < 1000
+          )
+
+          if (tileEffect) {
+            effects.push({
+              kind: 'tile',
+              type: tileEffect.type,
+              x: tileEffect.x,
+              y: tileEffect.y,
+              start: performance.now(),
+              duration: 1000,
+            })
+          }
+        }
+
         if (curr.hp < prev.hp) {
-          const attacker = Object.values(prevState.entities).find(e => {
-            const currE = state.entities[e.id]
-            return currE && currE.lastAttacked > e.lastAttacked
-          })
+          const attacker = Object.values(prevState.entities).find(e =>
+              state.entities[e.id] &&
+              state.entities[e.id].lastAttacked > e.lastAttacked
+          )
+
           if (attacker && attacker.id !== id) {
             const kind = state.entities[attacker.id]?.lastAction ?? 'melee'
+
             pushAttackEffect(
                 kind,
                 tileCenter(attacker.x, attacker.y),
@@ -165,16 +187,13 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
       }
     }
 
-    const FLASH_DURATION = 1000
+    for (const effect of effects) {
+      if (effect.kind !== 'tile') continue
 
-    for (const effect of state.tileEffects ?? []) {
-      if (!effect.activatedAt) continue
+      const t = (now - effect.start) / effect.duration
+      if (t > 1) continue
 
-      const elapsed = Date.now() - effect.activatedAt
-
-      if (elapsed > FLASH_DURATION) continue
-
-      const alpha = (1 - elapsed / FLASH_DURATION) * 0.6
+      const alpha = (1 - t) * 0.6
 
       context.fillStyle =
           effect.type === 'heal'
@@ -217,7 +236,7 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
     }
 
     for (const effect of effects) {
-      if (effect.kind === 'move') continue
+      if (effect.kind === 'move' || effect.kind === 'tile') continue
       const visual = ATTACK_VISUALS[effect.kind]
       if (!visual) continue
       const t = (now - effect.start) / effect.duration
@@ -232,16 +251,16 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
     const dpr = window.devicePixelRatio || 1
 
     tileSize = Math.max(32, Math.floor(Math.min(
-        rect.width  / state.width,
+        rect.width / state.width,
         rect.height / state.height,
     )))
 
-    canvasWidth  = state.width  * tileSize
+    canvasWidth = state.width * tileSize
     canvasHeight = state.height * tileSize
 
-    canvas.style.width  = `${canvasWidth}px`
+    canvas.style.width = `${canvasWidth}px`
     canvas.style.height = `${canvasHeight}px`
-    canvas.width  = Math.round(canvasWidth * dpr)
+    canvas.width = Math.round(canvasWidth * dpr)
     canvas.height = Math.round(canvasHeight * dpr)
     context.setTransform(dpr, 0, 0, dpr, 0, 0)
   }
@@ -250,13 +269,14 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
     const rect = canvas.getBoundingClientRect()
     const state = getState()
     return {
-      x: Math.floor((evt.clientX - rect.left) / (rect.width  / state.width)),
-      y: Math.floor((evt.clientY - rect.top)  / (rect.height / state.height)),
+      x: Math.floor((evt.clientX - rect.left) / (rect.width / state.width)),
+      y: Math.floor((evt.clientY - rect.top) / (rect.height / state.height)),
     }
   }
 
   canvas.addEventListener('mousemove', e => { uiStores.hover = getTile(e) })
   canvas.addEventListener('mouseleave', () => { uiStores.hover = null })
+
   canvas.addEventListener('click', e => {
     const tile = getTile(e)
     const selected = uiStores.selected
