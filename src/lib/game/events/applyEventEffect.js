@@ -18,7 +18,7 @@ export function applyEventEffect(state, entityId, effect) {
   }
   else if (effect.type === EVENT_EFFECT_TYPES.DOUBLE_ATTACK) {
     entity.doubleAttack = effect.amount
-    next.log.push(`${entityId} peut attaquer une fois de plus ce tour`)
+    next.log.push(`${entityId} peut attaquer deux fois d'affilée`)
   }
 
   return next

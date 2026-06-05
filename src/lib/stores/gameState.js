@@ -43,7 +43,6 @@ function initSocket() {
     })
 
     socket.on('state', (newState) => {
-      lobbyStatus.set('playing')
       previousState = newState
       gameState.set(newState)
     })
@@ -52,12 +51,12 @@ function initSocket() {
 
 if (browser) initSocket()
 
-export function createRoom() {
-  if (socket) socket.emit('create')
+export function createRoom(className) {
+  if (socket) socket.emit('create', className)
 }
 
-export function joinRoom(code) {
-  if (socket) socket.emit('join', code.trim().toUpperCase())
+export function joinRoom(code, className) {
+  if (socket) socket.emit('join', { code: code.trim().toUpperCase(), className })
 }
 
 export function dispatch(action) {

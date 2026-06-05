@@ -7,7 +7,7 @@ export function canFireball(state, attackerId, targetId) {
     state.log.push('Attaquant ou cible introuvable')
     return false
   }
-  const cost = 3
+  const cost = 4
   if (attacker.mp < cost) {
     state.log.push('MP insuffisant pour lancer ce sort')
     return false
@@ -26,8 +26,8 @@ export function canFireball(state, attackerId, targetId) {
 export function applyFireball(state, attackerId, targetId) {
   const next = structuredClone(state)
   const attacker = next.entities[attackerId]
-  const cost = 3
-  const dmg = 7 + (attacker.magicBonus ?? 0)
+  const cost = 4
+  const dmg = 8 + (attacker.magicBonus ?? 0)
   delete attacker.magicBonus
   attacker.mp -= cost
   if (attacker.doubleAttack) {
@@ -64,7 +64,7 @@ export function applyThunder(state, attackerId, targetId) {
   const next = structuredClone(state)
   const attacker = next.entities[attackerId]
   const cost = 10
-  const dmg = 20 + (attacker.magicBonus ?? 0)
+  const dmg = 18 + (attacker.magicBonus ?? 0)
   delete attacker.magicBonus
   attacker.mp -= cost
   if (attacker.doubleAttack) {

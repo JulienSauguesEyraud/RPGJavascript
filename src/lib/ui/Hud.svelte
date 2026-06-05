@@ -2,8 +2,8 @@
   import { gameState, myPlayerId } from '../stores/gameState.js'
   import { selectedAction } from '../stores/gameUi.js'
 
-  const COOLDOWN_MOVE   = 3000
-  const COOLDOWN_ATTACK = 5000
+  const COOLDOWN_MOVE   = $derived(me?.cooldownMove   ?? 3000)
+  const COOLDOWN_ATTACK = $derived(me?.cooldownAttack ?? 5000)
   const EVENT_INTERVAL  = 20000
   const EVENT_DURATION  = 5000
 
@@ -38,8 +38,16 @@
 
 <div class="hud">
   <div class="stats">
-    <div><strong>Joueur 1</strong> HP: {$gameState?.entities?.player1?.hp}/{$gameState?.entities?.player1?.maxHp} MP: {$gameState?.entities?.player1?.mp}</div>
-    <div><strong>Joueur 2</strong> HP: {$gameState?.entities?.player2?.hp}/{$gameState?.entities?.player2?.maxHp} MP: {$gameState?.entities?.player2?.mp}</div>
+    <div>
+      <strong>Joueur 1</strong> [{$gameState?.entities?.player1?.className ?? ''}]
+      HP: {$gameState?.entities?.player1?.hp}/{$gameState?.entities?.player1?.maxHp}
+      MP: {$gameState?.entities?.player1?.mp}/{$gameState?.entities?.player1?.maxMp}
+    </div>
+    <div>
+      <strong>Joueur 2</strong> [{$gameState?.entities?.player2?.className ?? ''}]
+      HP: {$gameState?.entities?.player2?.hp}/{$gameState?.entities?.player2?.maxHp}
+      MP: {$gameState?.entities?.player2?.mp}/{$gameState?.entities?.player2?.maxMp}
+    </div>
     <div class="event-zone">
       {#if $gameState?.activeEvent}
         <span class="event-active">{$gameState.activeEvent.type} — {(timeLeftEvent() / 1000).toFixed(1)}s</span>
@@ -70,7 +78,7 @@
               disabled={cooldownAttack() > 0}
               onclick={() => choose('melee')}
       >Corps à corps</button>
-      <p>(MP:0/Portée:1/DGT:5)</p>
+      <p>(MP:0/Portée:1)</p>
       <div class="bar">
         <div class="bar-fill attack" style="width:{(cooldownAttack()/COOLDOWN_ATTACK)*100}%"></div>
       </div>
@@ -84,13 +92,13 @@
                 disabled={cooldownAttack() > 0}
                 onclick={() => choose('fireball')}
         >Boule de feu</button>
-        <p>(MP:3/Portée:2/DGT:7)</p>
+        <p>(MP:4/Portée:2)</p>
         <button
                 class:active={$selectedAction === 'thunder'}
                 disabled={cooldownAttack() > 0}
                 onclick={() => choose('thunder')}
         >Tonnerre</button>
-        <p>(MP:10/Portée:∞/DGT:20)</p>
+        <p>(MP:10/Portée:∞)</p>
       </div>
       <div class="bar">
         <div class="bar-fill attack" style="width:{(cooldownAttack()/COOLDOWN_ATTACK)*100}%"></div>
@@ -115,6 +123,7 @@
     box-sizing: border-box;
     background: rgba(0,0,0,0.75);
     min-height: 140px;
+    gap: 10px
   }
   .stats {
     display: flex;

@@ -16,10 +16,8 @@ import {
 const httpServer = createServer()
 const io = new Server(httpServer, { cors: { origin: '*' } })
 
-const COOLDOWN_MOVE   = 3000
-const COOLDOWN_ATTACK = 5000
-const EVENT_INTERVAL  = 20000
-const EVENT_DURATION  = 5000
+const EVENT_INTERVAL = 20000
+const EVENT_DURATION = 5000
 
 const rooms = {}
 
@@ -49,6 +47,17 @@ function startRoomLoop(code) {
     const now = Date.now()
     let changed = false
 
+    for (const id in room.state.entities) {
+      const entity = room.state.entities[id]
+      if (!entity || !entity.mpRegen || !entity.mpRegenInterval) continue
+      if (entity.mp >= entity.maxMp) continue
+      if (now - entity.lastMpRegen >= entity.mpRegenInterval) {
+        room.state.entities[id].mp = Math.min(entity.maxMp, entity.mp + entity.mpRegen)
+        room.state.entities[id].lastMpRegen = now
+        changed = true
+      }
+    }
+
     if (!room.state.activeEvent && now - room.state.lastEventAt >= EVENT_INTERVAL) {
       room.state.activeEvent = createEventEffect()
       room.state.activeEvent.startedAt = now
@@ -74,13 +83,12 @@ function startRoomLoop(code) {
 io.on('connection', (socket) => {
   console.log('connexion', socket.id)
 
-  socket.on('create', () => {
+  socket.on('create', (className) => {
     const code = generateCode()
-    const state = createInitialState()
-    state.lastEventAt = Date.now()
     rooms[code] = {
-      state,
+      state: null,
       slots: { player1: socket.id, player2: null },
+      classes: { player1: className ?? 'warrior', player2: null },
       interval: null,
     }
     socket.join(code)
@@ -88,26 +96,32 @@ io.on('connection', (socket) => {
     socket.data.playerId = 'player1'
     socket.emit('created', code)
     socket.emit('assigned', 'player1')
-    socket.emit('state', { ...rooms[code].state, serverTime: Date.now() })
   })
 
-  socket.on('join', (code) => {
+  socket.on('join', ({ code, className }) => {
     const room = rooms[code]
     if (!room) {
       socket.emit('error', 'Code invalide')
       return
     }
-    if (room.slots.player2 !== null) {
+    if (room.slots.player2) {
       socket.emit('error', 'Partie pleine')
       return
     }
+
     room.slots.player2 = socket.id
+    room.classes.player2 = className ?? 'warrior'
     socket.join(code)
     socket.data.code = code
     socket.data.playerId = 'player2'
+
+    const state = createInitialState(room.classes)
+    state.lastEventAt = Date.now()
+    room.state = state
+
     socket.emit('joined', code)
     socket.emit('assigned', 'player2')
-    socket.emit('state', { ...room.state, serverTime: Date.now() })
+    broadcastRoom(code)
     io.to(room.slots.player1).emit('opponent_joined')
     startRoomLoop(code)
   })
@@ -116,17 +130,20 @@ io.on('connection', (socket) => {
     const code     = socket.data.code
     const playerId = socket.data.playerId
     const room     = rooms[code]
-    if (!room) return
+    if (!room || !room.state) return
 
     const now    = Date.now()
     let next     = structuredClone(room.state)
     const entity = next.entities[playerId]
     if (!entity) return
 
+    const cooldownMove   = entity.cooldownMove   ?? 3000
+    const cooldownAttack = entity.cooldownAttack ?? 5000
+
     if (action.type === 'MOVE') {
       const { to } = action.payload
-      if (now - entity.lastMoved < COOLDOWN_MOVE) {
-        next.log.push('Attendez avant de pouvoir vous déplacer à nouveau')
+      if (now - entity.lastMoved < cooldownMove) {
+        next.log.push('Déplacement en recharge')
         sendToPlayer(room, playerId, next)
         return
       }
@@ -140,8 +157,8 @@ io.on('connection', (socket) => {
     }
     else if (action.type === 'MELEE') {
       const { targetId } = action.payload
-      if (now - entity.lastAttacked < COOLDOWN_ATTACK) {
-        next.log.push('Attendez avant de pouvoir attaquer à nouveau')
+      if (now - entity.lastAttacked < cooldownAttack) {
+        next.log.push('Attaque en recharge')
         sendToPlayer(room, playerId, next)
         return
       }
@@ -155,8 +172,8 @@ io.on('connection', (socket) => {
     }
     else if (action.type === 'FIREBALL') {
       const { targetId } = action.payload
-      if (now - entity.lastAttacked < COOLDOWN_ATTACK) {
-        next.log.push('Attendez avant de pouvoir attaquer à nouveau')
+      if (now - entity.lastAttacked < cooldownAttack) {
+        next.log.push('Attaque en recharge')
         sendToPlayer(room, playerId, next)
         return
       }
@@ -170,8 +187,8 @@ io.on('connection', (socket) => {
     }
     else if (action.type === 'THUNDER') {
       const { targetId } = action.payload
-      if (now - entity.lastAttacked < COOLDOWN_ATTACK) {
-        next.log.push('Attendez avant de pouvoir attaquer à nouveau')
+      if (now - entity.lastAttacked < cooldownAttack) {
+        next.log.push('Attaque en recharge')
         sendToPlayer(room, playerId, next)
         return
       }
@@ -186,7 +203,7 @@ io.on('connection', (socket) => {
     else return
 
     if (next.entities.player1?.hp <= 0 || next.entities.player2?.hp <= 0) {
-      const fresh = createInitialState()
+      const fresh = createInitialState(room.classes)
       fresh.lastEventAt = Date.now()
       next = fresh
     }
@@ -198,7 +215,7 @@ io.on('connection', (socket) => {
   socket.on('reset', () => {
     const room = rooms[socket.data.code]
     if (!room) return
-    const fresh = createInitialState()
+    const fresh = createInitialState(room.classes)
     fresh.lastEventAt = Date.now()
     room.state = fresh
     broadcastRoom(socket.data.code)

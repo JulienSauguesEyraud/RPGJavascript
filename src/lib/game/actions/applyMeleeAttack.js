@@ -21,7 +21,7 @@ export function canMelee(state, attackerId, targetId) {
 export function applyMelee(state, attackerId, targetId) {
   const next = structuredClone(state)
   const attacker = next.entities[attackerId]
-  const dmg = 5 + (attacker.meleeBonus ?? 0)
+  const dmg = 5 + (attacker.meleeClassBonus ?? 0) + (attacker.meleeBonus ?? 0)
   delete attacker.meleeBonus
   if (attacker.doubleAttack) {
     attacker.doubleAttack = false

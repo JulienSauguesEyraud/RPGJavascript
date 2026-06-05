@@ -1,45 +1,62 @@
 <script>
   import { onMount } from 'svelte'
-  import { gameState, dispatch,
-           roomCode, lobbyStatus, lobbyError,
-           createRoom, joinRoom } from '../lib/stores/gameState.js'
+  import { gameState, dispatch, myPlayerId,
+    roomCode, lobbyStatus, lobbyError,
+    createRoom, joinRoom } from '../lib/stores/gameState.js'
   import { selectedAction } from '../lib/stores/gameUi.js'
   import { initGameCanvas } from '../lib/render/canvas.js'
+  import { CLASSES } from '../lib/game/classes.js'
   import Hud from '../lib/ui/Hud.svelte'
 
   let canvas
   let stateGame
-  let ui = { selected: 'move', hover: null }
-  let joinInput = $state('')
+  let ui = { selected: 'move', hover: null, playerId: null }
+  let selectedClass = $state('warrior')
+  let joinCode = $state('')
 
-  const unsub = gameState.subscribe(v => { stateGame = v })
+  const unsub    = gameState.subscribe(v => { stateGame = v })
   const unsubSel = selectedAction.subscribe(v => { ui.selected = v })
+  const unsubId  = myPlayerId.subscribe(v => { ui.playerId = v })
 
   onMount(() => {
     const api = initGameCanvas(canvas, () => stateGame, dispatch, ui)
-    return () => { api.destroy(); unsub(); unsubSel() }
+    requestAnimationFrame(() => api.resize())
+    return () => { api.destroy(); unsub(); unsubSel(); unsubId() }
   })
 </script>
 
-<!-- MENU LOBBY -->
 {#if $lobbyStatus !== 'playing'}
   <div class="lobby">
     <h1>RPG Tactics</h1>
 
     {#if $lobbyStatus === 'idle' || $lobbyStatus === 'error'}
+
+      <!-- Sélection de classe -->
+      <p class="section-title">Choisir une classe</p>
+      <div class="class-cards">
+        {#each Object.entries(CLASSES) as [key, cls]}
+          <button
+                  class="class-card"
+                  class:selected={selectedClass === key}
+                  onclick={() => selectedClass = key}
+          >
+            <strong>{cls.label}</strong>
+            <span>{cls.description}</span>
+          </button>
+        {/each}
+      </div>
+
       <div class="lobby-actions">
-        <button onclick={() => createRoom()}>Créer une partie</button>
+        <button onclick={() => createRoom(selectedClass)}>Créer une partie</button>
         <div class="join-row">
           <input
-            bind:value={joinInput}
-            placeholder="Code de partie"
-            maxlength="5"
+                  bind:value={joinCode}
+                  placeholder="Code"
+                  maxlength="5"
           />
-          <button onclick={() => joinRoom(joinInput)}>Rejoindre</button>
+          <button onclick={() => joinRoom(joinCode, selectedClass)}>Rejoindre</button>
         </div>
-        {#if $lobbyError}
-          <p class="error">{$lobbyError}</p>
-        {/if}
+        {#if $lobbyError}<p class="error">{$lobbyError}</p>{/if}
       </div>
     {/if}
 
@@ -48,15 +65,12 @@
         <p>Partie créée !</p>
         <p class="code">{$roomCode}</p>
         <p class="hint">Donne ce code à ton adversaire</p>
-        <button onclick={() => navigator.clipboard.writeText($roomCode)}>
-          Copier le code
-        </button>
+        <button onclick={() => navigator.clipboard.writeText($roomCode)}>Copier</button>
       </div>
     {/if}
   </div>
 {/if}
 
-<!-- ARÈNE -->
 <div class="page" class:hidden={$lobbyStatus !== 'playing'}>
   {#if $roomCode}
     <div class="room-badge">Room : <strong>{$roomCode}</strong></div>
@@ -76,6 +90,7 @@
     color: white;
     font-family: sans-serif;
   }
+  .page.hidden { display: none; }
 
   .lobby {
     display: flex;
@@ -181,4 +196,36 @@
   border: 1px solid rgba(125, 211, 252, 0.25);
   pointer-events: none;
 }
+  .section-title { margin: 0 0 8px; opacity: 0.7; font-size: 0.9rem; text-align: center; }
+
+  .class-cards {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .class-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 140px;
+    padding: 14px 10px;
+    border-radius: 8px;
+    border: 2px solid rgba(255,255,255,0.15);
+    background: #1a2535;
+    color: white;
+    cursor: pointer;
+    font-size: 0.82rem;
+    text-align: center;
+    transition: border-color 0.15s;
+  }
+  .class-card strong { font-size: 1rem; }
+  .class-card span { opacity: 0.65; line-height: 1.3; }
+  .class-card.selected {
+    border-color: #7dd3fc;
+    background: #0f3a52;
+  }
+  .class-card:hover { border-color: rgba(125,211,252,0.5); }
+
 </style>
