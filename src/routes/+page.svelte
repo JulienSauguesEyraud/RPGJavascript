@@ -104,7 +104,7 @@
   }
 
   input {
-    padding: 8px 12px;
+    padding: 10px;
     border-radius: 6px;
     border: 1px solid rgba(255,255,255,0.2);
     background: #263244;
@@ -125,13 +125,14 @@
     font-size: 1rem;
     cursor: pointer;
   }
-  button:hover { background: #1a7a9a; }
+  button:hover {
+    background: #1a7a9a;
+  }
 
   .waiting {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
   }
 
   .code {
@@ -141,8 +142,13 @@
     color: #7dd3fc;
   }
 
-  .hint { opacity: 0.6; font-size: 0.9rem; }
-  .error { color: #f87171; }
+  .hint {
+    opacity: 0.6;
+    font-size: 0.9rem;
+  }
+  .error {
+    color: #f87171;
+  }
 
   .page {
     display: flex;
