@@ -4,7 +4,8 @@ import {
   createInitialState,
   canMove, applyMove,
   canMelee, applyMelee,
-  canMagic, applyMagic,
+  canFireball, applyFireball,
+  canThunder, applyThunder,
   TILE_EFFECT_TRIGGERS,
   resolveTileTrigger,
   createEventEffect,
@@ -32,6 +33,11 @@ function broadcastRoom(code) {
   const room = rooms[code]
   if (!room) return
   io.to(code).emit('state', { ...room.state, serverTime: Date.now() })
+}
+
+function sendToPlayer(room, playerId, state) {
+  const socketId = room.slots[playerId]
+  if (socketId) io.to(socketId).emit('state', state)
 }
 
 function startRoomLoop(code) {
@@ -121,74 +127,61 @@ io.on('connection', (socket) => {
       const { to } = action.payload
       if (now - entity.lastMoved < COOLDOWN_MOVE) {
         next.log.push('Attendez avant de pouvoir vous déplacer à nouveau')
-        if (playerId === 'player1') {
-          io.to(room.slots.player1).emit('state', next)
-        }
-        else if (playerId === 'player2') {
-          io.to(room.slots.player2).emit('state', next)
-        }
+        sendToPlayer(room, playerId, next)
         return
       }
       if (!canMove(next, playerId, to)) {
-        if (playerId === 'player1') {
-          io.to(room.slots.player1).emit('state', next)
-        }
-        else if (playerId === 'player2') {
-          io.to(room.slots.player2).emit('state', next)
-        }
+        sendToPlayer(room, playerId, next)
         return
       }
       next = applyMove(next, playerId, to)
       next.entities[playerId].lastMoved = now
       next = resolveTileTrigger(next, playerId, TILE_EFFECT_TRIGGERS.ON_ENTER)
-    } 
+    }
     else if (action.type === 'MELEE') {
       const { targetId } = action.payload
       if (now - entity.lastAttacked < COOLDOWN_ATTACK) {
         next.log.push('Attendez avant de pouvoir attaquer à nouveau')
-        if (playerId === 'player1') {
-          io.to(room.slots.player1).emit('state', next)
-        }
-        else if (playerId === 'player2') {
-          io.to(room.slots.player2).emit('state', next)
-        }
+        sendToPlayer(room, playerId, next)
         return
       }
       if (!canMelee(next, playerId, targetId)) {
-        if (playerId === 'player1') {
-          io.to(room.slots.player1).emit('state', next)
-        }
-        else if (playerId === 'player2') {
-          io.to(room.slots.player2).emit('state', next)
-        }
+        sendToPlayer(room, playerId, next)
         return
       }
       next = applyMelee(next, playerId, targetId)
       next.entities[playerId].lastAttacked = now
-    } 
-    else if (action.type === 'MAGIC') {
+      next.entities[playerId].lastAction = 'melee'
+    }
+    else if (action.type === 'FIREBALL') {
       const { targetId } = action.payload
       if (now - entity.lastAttacked < COOLDOWN_ATTACK) {
         next.log.push('Attendez avant de pouvoir attaquer à nouveau')
-        if (playerId === 'player1') {
-          io.to(room.slots.player1).emit('state', next)
-        }
-        else if (playerId === 'player2') {
-          io.to(room.slots.player2).emit('state', next)
-        }
+        sendToPlayer(room, playerId, next)
         return
       }
-      if (!canMagic(next, playerId, targetId)) {
-        if (playerId === 'player1') {
-          io.to(room.slots.player1).emit('state', next)
-        }
-        else if (playerId === 'player2') {
-          io.to(room.slots.player2).emit('state', next)
-        }
+      if (!canFireball(next, playerId, targetId)) {
+        sendToPlayer(room, playerId, next)
         return
       }
-      next = applyMagic(next, playerId, targetId)
+      next = applyFireball(next, playerId, targetId)
       next.entities[playerId].lastAttacked = now
+      next.entities[playerId].lastAction = 'fireball'
+    }
+    else if (action.type === 'THUNDER') {
+      const { targetId } = action.payload
+      if (now - entity.lastAttacked < COOLDOWN_ATTACK) {
+        next.log.push('Attendez avant de pouvoir attaquer à nouveau')
+        sendToPlayer(room, playerId, next)
+        return
+      }
+      if (!canThunder(next, playerId, targetId)) {
+        sendToPlayer(room, playerId, next)
+        return
+      }
+      next = applyThunder(next, playerId, targetId)
+      next.entities[playerId].lastAttacked = now
+      next.entities[playerId].lastAction = 'thunder'
     }
     else return
 

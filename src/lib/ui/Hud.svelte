@@ -70,6 +70,7 @@
               disabled={cooldownAttack() > 0}
               onclick={() => choose('melee')}
       >Corps à corps</button>
+      <p>(MP:0/Portée:1/DGT:5)</p>
       <div class="bar">
         <div class="bar-fill attack" style="width:{(cooldownAttack()/COOLDOWN_ATTACK)*100}%"></div>
       </div>
@@ -77,11 +78,20 @@
     </div>
 
     <div class="action-btn">
-      <button
-              class:active={$selectedAction === 'magic'}
-              disabled={cooldownAttack() > 0}
-              onclick={() => choose('magic')}
-      >Magie</button>
+      <div class="magicAttacks">
+        <button
+                class:active={$selectedAction === 'fireball'}
+                disabled={cooldownAttack() > 0}
+                onclick={() => choose('fireball')}
+        >Boule de feu</button>
+        <p>(MP:3/Portée:2/DGT:7)</p>
+        <button
+                class:active={$selectedAction === 'thunder'}
+                disabled={cooldownAttack() > 0}
+                onclick={() => choose('thunder')}
+        >Tonnerre</button>
+        <p>(MP:10/Portée:∞/DGT:20)</p>
+      </div>
       <div class="bar">
         <div class="bar-fill attack" style="width:{(cooldownAttack()/COOLDOWN_ATTACK)*100}%"></div>
       </div>
@@ -90,7 +100,7 @@
   </div>
 
   <div class="log">
-    {#each ($gameState?.log ?? []).slice(-5) as entry}
+    {#each ($gameState?.log ?? []).slice(-7) as entry}
       <div>{entry}</div>
     {/each}
   </div>
@@ -104,7 +114,7 @@
     padding: 10px;
     box-sizing: border-box;
     background: rgba(0,0,0,0.75);
-    min-height: 90px;
+    min-height: 140px;
   }
   .stats {
     display: flex;
@@ -144,6 +154,24 @@
   .action-btn {
     min-width: 90px;
   }
+  .action-btn p {
+    margin: 0;
+    font-size: 12px;
+    color: rgba(255,255,255,0.65);
+    pointer-events: none;
+  }
+
+  .magicAttacks {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+  .magicAttacks button {
+    margin-top: 8px;
+  }
+
   .actions button {
     width: 100%;
     padding: 6px 10px;
@@ -163,8 +191,11 @@
     border-color: #7dd3fc;
   }
   .cd-label {
+    display: block;
     font-size: 10px;
     opacity: 0.7;
+    text-align: center;
+    pointer-events: none;
   }
   .log {
     font-size: 12px;

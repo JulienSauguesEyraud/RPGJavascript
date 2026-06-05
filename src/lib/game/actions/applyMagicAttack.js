@@ -1,13 +1,13 @@
 import { distance8 } from '../index.js'
 
-export function canMagic(state, attackerId, targetId) {
+export function canFireball(state, attackerId, targetId) {
   const attacker = state.entities[attackerId]
   const target = state.entities[targetId]
   if (!attacker || !target) {
     state.log.push('Attaquant ou cible introuvable')
     return false
   }
-  const cost = 2
+  const cost = 3
   if (attacker.mp < cost) {
     state.log.push('MP insuffisant pour lancer un sort')
     return false
@@ -23,11 +23,48 @@ export function canMagic(state, attackerId, targetId) {
   return true
 }
 
-export function applyMagic(state, attackerId, targetId) {
+export function applyFireball(state, attackerId, targetId) {
   const next = structuredClone(state)
   const attacker = next.entities[attackerId]
-  const cost = 2
-  const dmg = 5 + (attacker.magicBonus ?? 0)
+  const cost = 3
+  const dmg = 7 + (attacker.magicBonus ?? 0)
+  delete attacker.magicBonus
+  attacker.mp -= cost
+  if (attacker.doubleAttack) {
+    attacker.doubleAttack = false
+  }
+  else {
+    attacker.hasAttacked = true
+  }
+  next.entities[targetId].hp -= dmg
+  next.log.push(`${attackerId} lance un sort sur ${targetId} pour ${dmg} dégâts (-${cost} MP)`)
+  return next
+}
+
+export function canThunder(state, attackerId, targetId) {
+  const attacker = state.entities[attackerId]
+  const target = state.entities[targetId]
+  if (!attacker || !target) {
+    state.log.push('Attaquant ou cible introuvable')
+    return false
+  }
+  const cost = 10
+  if (attacker.mp < cost) {
+    state.log.push('MP insuffisant pour lancer un sort')
+    return false
+  }
+  if(attackerId === targetId) {
+    state.log.push('Vous ne pouvez pas vous attaquer vous même')
+    return false
+  }
+  return true
+}
+
+export function applyThunder(state, attackerId, targetId) {
+  const next = structuredClone(state)
+  const attacker = next.entities[attackerId]
+  const cost = 10
+  const dmg = 20 + (attacker.magicBonus ?? 0)
   delete attacker.magicBonus
   attacker.mp -= cost
   if (attacker.doubleAttack) {

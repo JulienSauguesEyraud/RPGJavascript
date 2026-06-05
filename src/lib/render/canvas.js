@@ -1,5 +1,69 @@
 import { gameState } from '../stores/gameState.js'
 
+const ATTACK_VISUALS = {
+  melee: {
+    duration: 200,
+    draw(context, fx, t) {
+      const x = fx.from.x + (fx.to.x - fx.from.x) * t
+      const y = fx.from.y + (fx.to.y - fx.from.y) * t
+      context.save()
+      context.globalAlpha = 1 - t
+      context.strokeStyle = '#fff'
+      context.lineWidth = 4
+      context.lineCap = 'round'
+      context.beginPath()
+      context.moveTo(fx.from.x, fx.from.y)
+      context.lineTo(x, y)
+      context.stroke()
+      context.restore()
+    },
+  },
+  fireball: {
+    duration: 400,
+    draw(context, fx, t, tileSize) {
+      const x = fx.from.x + (fx.to.x - fx.from.x) * t
+      const y = fx.from.y + (fx.to.y - fx.from.y) * t
+      context.save()
+      context.fillStyle = '#f90'
+      context.shadowColor = '#f90'
+      context.shadowBlur = 12
+      context.beginPath()
+      context.arc(x, y, tileSize * 0.12, 0, Math.PI * 2)
+      context.fill()
+      context.restore()
+    },
+  },
+  thunder: {
+    duration: 350,
+
+    draw(context, fx, t, tileSize) {
+      const alpha = 1 - t
+
+      const startX = fx.to.x
+      const startY = fx.to.y - tileSize * 1.5
+
+      const midY1 = startY + tileSize * 0.5
+      const midY2 = startY + tileSize
+
+      const offset = tileSize * 0.15
+
+      context.save()
+      context.globalAlpha = alpha
+
+      context.strokeStyle = '#7af'
+      context.lineWidth = 3
+      context.beginPath()
+      context.moveTo(startX, startY)
+      context.lineTo(startX + offset, midY1)
+      context.lineTo(startX - offset, midY2)
+      context.lineTo(fx.to.x, fx.to.y)
+      context.stroke()
+
+      context.restore()
+    },
+  },
+}
+
 export function initGameCanvas(canvas, getState, dispatch, uiStores) {
   const context = canvas.getContext('2d')
   let tileSize = 64
@@ -18,6 +82,18 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
       x: x * tileSize + tileSize / 2,
       y: y * tileSize + tileSize / 2,
     }
+  }
+
+  function pushAttackEffect(kind, from, to) {
+    const visual = ATTACK_VISUALS[kind]
+    if (!visual) return
+    effects.push({
+      kind,
+      from,
+      to,
+      start: performance.now(),
+      duration: visual.duration,
+    })
   }
 
   const unsub = gameState.subscribe(state => {
@@ -46,17 +122,12 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
             return currE && currE.lastAttacked > e.lastAttacked
           })
           if (attacker && attacker.id !== id) {
-            const from = tileCenter(attacker.x, attacker.y)
-            const to = tileCenter(prev.x, prev.y)
-            const attackerCurr = state.entities[attacker.id]
-            const isMagic = attackerCurr && attackerCurr.mp < attacker.mp
-            effects.push({
-              kind: isMagic ? 'magic' : 'melee',
-              from,
-              to,
-              start: performance.now(),
-              duration: isMagic ? 400 : 200,
-            })
+            const kind = state.entities[attacker.id]?.lastAction ?? 'melee'
+            pushAttackEffect(
+                kind,
+                tileCenter(attacker.x, attacker.y),
+                tileCenter(prev.x, prev.y),
+            )
           }
         }
       }
@@ -82,9 +153,7 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
     if (!state) return
 
     for (let i = effects.length - 1; i >= 0; i--) {
-      if (now - effects[i].start >= effects[i].duration) {
-        effects.splice(i, 1)
-      }
+      if (now - effects[i].start >= effects[i].duration) effects.splice(i, 1)
     }
 
     context.clearRect(0, 0, canvasWidth, canvasHeight)
@@ -135,32 +204,11 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
     }
 
     for (const effect of effects) {
+      if (effect.kind === 'move') continue
+      const visual = ATTACK_VISUALS[effect.kind]
+      if (!visual) continue
       const t = (now - effect.start) / effect.duration
-
-      if (effect.kind === 'melee') {
-        const x = effect.from.x + (effect.to.x - effect.from.x) * t
-        const y = effect.from.y + (effect.to.y - effect.from.y) * t
-        context.save()
-        context.globalAlpha = 1 - t
-        context.strokeStyle = '#fff'
-        context.lineWidth = 4
-        context.beginPath()
-        context.moveTo(effect.from.x, effect.from.y)
-        context.lineTo(x, y)
-        context.stroke()
-        context.restore()
-      }
-
-      if (effect.kind === 'magic') {
-        const x = effect.from.x + (effect.to.x - effect.from.x) * t
-        const y = effect.from.y + (effect.to.y - effect.from.y) * t
-        context.save()
-        context.fillStyle = '#f90'
-        context.beginPath()
-        context.arc(x, y, tileSize * 0.12, 0, Math.PI * 2)
-        context.fill()
-        context.restore()
-      }
+      visual.draw(context, effect, t, tileSize)
     }
   }
 
@@ -175,7 +223,7 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
         rect.height / state.height,
     )))
 
-    canvasWidth = state.width  * tileSize
+    canvasWidth  = state.width  * tileSize
     canvasHeight = state.height * tileSize
 
     canvas.style.width  = `${canvasWidth}px`
@@ -198,17 +246,20 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
   canvas.addEventListener('mouseleave', () => { uiStores.hover = null })
   canvas.addEventListener('click', e => {
     const tile = getTile(e)
-    const state = getState()
     const selected = uiStores.selected
+    const state = getState()
+
     if (selected === 'move') {
-      dispatch({ type: 'MOVE', payload: { id: state.turn, to: tile } })
-    } else if (selected === 'melee' || selected === 'magic') {
+      dispatch({ type: 'MOVE', payload: { id: uiStores.playerId, to: tile } })
+    } else if (selected === 'melee' || selected === 'fireball' || selected === 'thunder') {
       for (const id in state.entities) {
         const entity = state.entities[id]
-        if (entity.x === tile.x && entity.y === tile.y && id !== state.turn) {
+        if (entity.x === tile.x && entity.y === tile.y && id !== uiStores.playerId) {
           dispatch({
-            type: selected === 'melee' ? 'MELEE' : 'MAGIC',
-            payload: { attackerId: state.turn, targetId: id },
+            type: selected === 'melee' ? 'MELEE'
+                : selected === 'fireball' ? 'FIREBALL'
+                    : 'THUNDER',
+            payload: { attackerId: uiStores.playerId, targetId: id },
           })
           break
         }
