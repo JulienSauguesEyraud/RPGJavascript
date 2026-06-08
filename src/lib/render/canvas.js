@@ -54,18 +54,20 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
         if (curr.x !== prev.x || curr.y !== prev.y) {
           let startTime = performance.now()
 
-          if (curr.lastAction === 'teleport' && prev.lastAction !== 'teleport') {
+          const isTeleport = curr.lastAction === 'teleport' ||
+              (Math.abs(curr.x - prev.x) > 1 || Math.abs(curr.y - prev.y) > 1);
+
+          if (isTeleport) {
             effects.push({
               kind: 'teleport',
               entityId: id,
               from: tileCenter(prev.x, prev.y),
               to: tileCenter(curr.x, curr.y),
-              start: startTime,
+              start: performance.now(),
               duration: 600,
-            })
-          }
-          else {
-            const entityMoves = effects.filter(e => e.kind === 'move' && e.entityId === id)
+            });
+          } else {
+            const entityMoves = effects.filter(e => e.kind === 'move' && e.entityId === id);
             if (entityMoves.length > 0) {
               const latest = entityMoves[entityMoves.length - 1]
               startTime = Math.max(startTime, latest.start + latest.duration)
@@ -114,23 +116,28 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
         }
       }
 
-      for (const monster of state.monsters ?? []) {
-        const prevMonster = prevState.monsters?.find(m => m.id === monster.id)
-        if (!prevMonster) continue
+      for (const prevMonster of prevState.monsters ?? []) {
+        const currentMonster = state.monsters?.find(m => m.id === prevMonster.id);
 
-        if (monster.hp < prevMonster.hp) {
+        if (currentMonster) {
+          if (currentMonster.hp < prevMonster.hp) {
+            const attacker = Object.values(state.entities).find(p => {
+              const prevPlayer = prevState.entities[p.id];
+              return prevPlayer && p.lastAttacked > prevPlayer.lastAttacked;
+            });
+            if (attacker) {
+              pushAttackEffect(attacker.lastAction ?? 'melee', tileCenter(attacker.x, attacker.y), tileCenter(currentMonster.x, currentMonster.y));
+            }
+          }
+        }
+        else {
           const attacker = Object.values(state.entities).find(p => {
-            const prevPlayer = prevState.entities[p.id]
-            return prevPlayer && p.lastAttacked > prevPlayer.lastAttacked
-          })
+            const prevPlayer = prevState.entities[p.id];
+            return prevPlayer && p.lastAttacked > prevPlayer.lastAttacked;
+          });
 
           if (attacker) {
-            const kind = attacker.lastAction ?? 'melee'
-            pushAttackEffect(
-                kind,
-                tileCenter(attacker.x, attacker.y),
-                tileCenter(prevMonster.x, prevMonster.y),
-            )
+            pushAttackEffect(attacker.lastAction ?? 'melee', tileCenter(attacker.x, attacker.y), tileCenter(prevMonster.x, prevMonster.y));
           }
         }
       }
@@ -140,13 +147,15 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
   })
 
   function getDisplayPos(id, entity, now) {
-    for (const effect of effects) {
-      if (effect.kind === 'teleport' && effect.entityId === id) {
-        if (now >= effect.start && now <= effect.start + effect.duration) return null
+    const teleportEffect = effects.find(e => e.kind === 'teleport' && e.entityId === id);
+    if (teleportEffect) {
+      const elapsed = now - teleportEffect.start;
+      if (elapsed >= 0 && elapsed <= teleportEffect.duration) {
+        return null;
       }
     }
 
-    const moves = effects.filter(e => e.kind === 'move' && e.entityId === id)
+    const moves = effects.filter(e => e.kind === 'move' && e.entityId === id);
     if (moves.length > 0) {
       const activeMove = moves.find(e => now >= e.start && now <= e.start + e.duration)
       if (activeMove) {
