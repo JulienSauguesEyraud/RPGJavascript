@@ -2,25 +2,40 @@ import { distance8 } from '../index.js'
 
 export function canFireball(state, attackerId, targetId) {
   const attacker = state.entities[attackerId]
-  const target = state.entities[targetId]
-  if (!attacker || !target) {
-    state.log.push('Attaquant ou cible introuvable')
+  if (!attacker) {
+    state.log.push('Attaquant introuvable');
     return false
   }
   const cost = 4
   if (attacker.mp < cost) {
-    state.log.push('MP insuffisant pour lancer ce sort')
+    state.log.push('MP insuffisant');
     return false
   }
   if (attackerId === targetId) {
-    state.log.push('Vous ne pouvez pas vous attaquer vous même')
+    state.log.push('Vous ne pouvez pas vous attaquer vous même');
     return false
   }
-  if (distance8(attacker, target) > 2) {
-    state.log.push('Cible hors de portée')
-    return false
+
+  const target = state.entities[targetId]
+  if (target) {
+    if (distance8(attacker, target) > 2) {
+      state.log.push('Cible hors de portée');
+      return false
+    }
+    return true
   }
-  return true
+
+  const monster = state.monsters?.find(m => m.id === targetId)
+  if (monster) {
+    if (distance8(attacker, monster) > 2) {
+      state.log.push('Cible hors de portée');
+      return false
+    }
+    return true
+  }
+
+  state.log.push('Cible introuvable')
+  return false
 }
 
 export function applyFireball(state, attackerId, targetId) {
@@ -30,28 +45,46 @@ export function applyFireball(state, attackerId, targetId) {
   const dmg = 8 + (attacker.magicBonus ?? 0)
   delete attacker.magicBonus
   attacker.mp -= cost
-  next.entities[targetId].hp -= dmg
+  const target = next.entities[targetId]
+  if (target) {
+    target.hp -= dmg
+    next.log.push(`${attackerId} frappe ${targetId} pour ${dmg} dégâts`)
+    return next
+  }
+
+  const monster = next.monsters?.find(m => m.id === targetId)
+  if (monster) {
+    monster.hp -= dmg
+    next.log.push(`${attackerId} frappe ${monster.type} pour ${dmg} dégâts`)
+  }
   next.log.push(`${attackerId} lance un sort sur ${targetId} pour ${dmg} dégâts (-${cost} MP)`)
   return next
 }
 
 export function canThunder(state, attackerId, targetId) {
   const attacker = state.entities[attackerId]
-  const target = state.entities[targetId]
-  if (!attacker || !target) {
-    state.log.push('Attaquant ou cible introuvable')
+  if (!attacker) {
+    state.log.push('Attaquant introuvable');
     return false
   }
   const cost = 10
   if (attacker.mp < cost) {
-    state.log.push('MP insuffisant pour lancer ce sort')
+    state.log.push('MP insuffisant');
     return false
   }
   if (attackerId === targetId) {
-    state.log.push('Vous ne pouvez pas vous attaquer vous même')
+    state.log.push('Vous ne pouvez pas vous attaquer vous même');
     return false
   }
-  return true
+
+  const target = state.entities[targetId]
+  if (target) return true
+
+  const monster = state.monsters?.find(m => m.id === targetId)
+  if (monster) return true
+
+  state.log.push('Cible introuvable')
+  return false
 }
 
 export function applyThunder(state, attackerId, targetId) {
@@ -61,7 +94,18 @@ export function applyThunder(state, attackerId, targetId) {
   const dmg = 14 + (attacker.magicBonus ?? 0)
   delete attacker.magicBonus
   attacker.mp -= cost
-  next.entities[targetId].hp -= dmg
+  const target = next.entities[targetId]
+  if (target) {
+    target.hp -= dmg
+    next.log.push(`${attackerId} frappe ${targetId} pour ${dmg} dégâts`)
+    return next
+  }
+
+  const monster = next.monsters?.find(m => m.id === targetId)
+  if (monster) {
+    monster.hp -= dmg
+    next.log.push(`${attackerId} frappe ${monster.type} pour ${dmg} dégâts`)
+  }
   next.log.push(`${attackerId} lance un sort sur ${targetId} pour ${dmg} dégâts (-${cost} MP)`)
   return next
 }
@@ -82,9 +126,15 @@ export function canTeleport(state, id, to) {
       return false
     }
   }
+  for (const m of state.monsters ?? []) {
+    if (m.x === to.x && m.y === to.y) {
+      state.log.push('Position occupée');
+      return false
+    }
+  }
   const cost = 5
   if (actor.mp < cost) {
-    state.log.push('MP insuffisant pour lancer ce sort')
+    state.log.push('MP insuffisant');
     return false
   }
   return true

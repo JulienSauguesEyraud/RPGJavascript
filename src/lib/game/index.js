@@ -5,6 +5,7 @@ export { canFireball, applyFireball } from './actions/applyMagicAttack.js'
 export { canThunder, applyThunder } from './actions/applyMagicAttack.js'
 export { canTeleport, applyTeleport } from './actions/applyMagicAttack.js'
 export { distance8 } from './resolution/distance.js'
+export { checkDeadMonsters } from './monsters/index.js'
 export {
   TILE_EFFECT_TRIGGERS,
   TILE_EFFECT_TYPES,
@@ -18,3 +19,7 @@ export {
   applyEventEffect,
   removeEventEffect
 } from './events/index.js'
+export {
+  MONSTER_TYPES,
+  createMonsters
+} from './monsters/index.js'

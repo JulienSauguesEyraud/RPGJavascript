@@ -12,6 +12,9 @@ import {
   createEventEffect,
   applyEventEffect,
   removeEventEffect,
+  MONSTER_TYPES,
+  distance8,
+  checkDeadMonsters
 } from '../src/lib/game/index.js'
 
 const httpServer = createServer()
@@ -56,6 +59,40 @@ function startRoomLoop(code) {
         room.state.entities[id].mp = Math.min(entity.maxMp, entity.mp + entity.mpRegen)
         room.state.entities[id].lastMpRegen = now
         changed = true
+      }
+    }
+
+    for (const monster of room.state.monsters ?? []) {
+      const def = MONSTER_TYPES[monster.type]
+      if (!def) continue
+
+      for (const playerId of ['player1', 'player2']) {
+        const player = room.state.entities[playerId]
+        if (!player) continue
+
+        const isAdjacent = distance8(player, monster) === 1
+
+        if (isAdjacent) {
+          if (!monster.adjacentSince[playerId]) {
+            monster.adjacentSince[playerId] = now
+          }
+          if (now - monster.adjacentSince[playerId] >= def.attackDelay) {
+            room.state.entities[playerId].hp -= def.damage
+            monster.adjacentSince[playerId] = now
+            room.state.log.push(`${monster.type} attaque ${playerId} pour ${def.damage} dégâts`)
+            changed = true
+
+            if (room.state.entities[playerId].hp <= 0) {
+              const fresh = createInitialState(room.classes)
+              fresh.lastEventAt = now
+              room.state = fresh
+              changed = true
+              break
+            }
+          }
+        } else {
+          monster.adjacentSince[playerId] = 0
+        }
       }
     }
 
@@ -154,6 +191,7 @@ io.on('connection', (socket) => {
       }
       next = applyMove(next, playerId, to)
       next.entities[playerId].lastMoved = now
+      next.entities[playerId].lastAction = 'move'
       next = resolveTileTrigger(next, playerId, TILE_EFFECT_TRIGGERS.ON_ENTER)
     }
     else if (action.type === 'MELEE') {
@@ -174,6 +212,7 @@ io.on('connection', (socket) => {
         next.entities[playerId].lastAttacked = now
       }
       next.entities[playerId].lastAction = 'melee'
+      checkDeadMonsters(next, playerId)
     }
     else if (action.type === 'FIREBALL') {
       const { targetId } = action.payload
@@ -193,6 +232,7 @@ io.on('connection', (socket) => {
         next.entities[playerId].lastAttacked = now
       }
       next.entities[playerId].lastAction = 'fireball'
+      checkDeadMonsters(next, playerId)
     }
     else if (action.type === 'THUNDER') {
       const { targetId } = action.payload
@@ -212,8 +252,9 @@ io.on('connection', (socket) => {
         next.entities[playerId].lastAttacked = now
       }
       next.entities[playerId].lastAction = 'thunder'
+      checkDeadMonsters(next, playerId)
     }
-     else if (action.type === 'TELEPORT') {
+    else if (action.type === 'TELEPORT') {
       const { to } = action.payload
       if (now - entity.lastAttacked < cooldownAttack) {
         next.log.push('Attaque en recharge')

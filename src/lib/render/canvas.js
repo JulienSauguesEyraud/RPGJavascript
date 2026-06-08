@@ -1,186 +1,5 @@
 import { gameState } from '../stores/gameState.js'
-
-const ATTACK_VISUALS = {
-  melee: {
-    duration: 200,
-    draw(context, fx, t) {
-      const x = fx.from.x + (fx.to.x - fx.from.x) * t
-      const y = fx.from.y + (fx.to.y - fx.from.y) * t
-      context.save()
-      context.globalAlpha = 1 - t
-      context.strokeStyle = '#fff'
-      context.lineWidth = 4
-      context.lineCap = 'round'
-      context.beginPath()
-      context.moveTo(fx.from.x, fx.from.y)
-      context.lineTo(x, y)
-      context.stroke()
-      context.restore()
-    },
-  },
-
-  fireball: {
-    duration: 400,
-    draw(context, fx, t, tileSize) {
-      const x = fx.from.x + (fx.to.x - fx.from.x) * t
-      const y = fx.from.y + (fx.to.y - fx.from.y) * t
-      context.save()
-      context.fillStyle = '#f90'
-      context.shadowColor = '#f90'
-      context.shadowBlur = 12
-      context.beginPath()
-      context.arc(x, y, tileSize * 0.12, 0, Math.PI * 2)
-      context.fill()
-      context.restore()
-    },
-  },
-
-  thunder: {
-    duration: 350,
-    draw(context, fx, t, tileSize) {
-      const alpha = 1 - t
-
-      const startX = fx.to.x
-      const startY = fx.to.y - tileSize * 1.5
-
-      const midY1 = startY + tileSize * 0.5
-      const midY2 = startY + tileSize
-
-      const offset = tileSize * 0.15
-
-      context.save()
-      context.globalAlpha = alpha
-      context.strokeStyle = '#7af'
-      context.lineWidth = 3
-
-      context.beginPath()
-      context.moveTo(startX, startY)
-      context.lineTo(startX + offset, midY1)
-      context.lineTo(startX - offset, midY2)
-      context.lineTo(fx.to.x, fx.to.y)
-      context.stroke()
-
-      context.restore()
-    },
-  },
-  teleport: {
-    duration: 600,
-    draw(context, fx, t, tileSize) {
-      const fadeOut = Math.max(0, 1 - t * 2)
-      const fadeIn  = Math.max(0, t * 2 - 1)
-
-      function drawPortal(x, y, alpha) {
-        if (alpha <= 0) return
-        context.save()
-        context.globalAlpha = alpha
-        context.strokeStyle = '#8ffa8b'
-        context.lineWidth = 2
-        context.beginPath()
-        context.ellipse(x, y, tileSize * 0.28, tileSize * 0.38, 0, 0, Math.PI * 2)
-        context.stroke()
-        context.fillStyle = 'rgb(98 255 0 / 0.49)'
-        context.fill()
-        context.restore()
-      }
-
-      drawPortal(fx.from.x, fx.from.y, fadeOut)
-      drawPortal(fx.to.x,   fx.to.y,   fadeIn)
-    },
-  },
-}
-
-const CLASS_ACCESSORIES = {
-  mage: {
-    draw(context, px, py, tileSize) {
-      const r = tileSize * 0.35
-      context.save()
-      context.fillStyle = '#7c3aed'
-      context.strokeStyle = '#a78bfa'
-      context.lineWidth = 1.5
-      context.beginPath()
-      context.moveTo(px, py - r - tileSize * 0.35)   // pointe
-      context.lineTo(px - r * 0.7, py - r * 0.6)     // bord gauche
-      context.lineTo(px + r * 0.7, py - r * 0.6)     // bord droit
-      context.closePath()
-      context.fill()
-      context.stroke()
-      // Bord du chapeau
-      context.fillStyle = '#5b21b6'
-      context.beginPath()
-      context.ellipse(px, py - r * 0.6, r * 0.85, r * 0.2, 0, 0, Math.PI * 2)
-      context.fill()
-      context.restore()
-    },
-  },
-  tank: {
-    draw(context, px, py, tileSize) {
-      // Bouclier à droite du perso
-      const r = tileSize * 0.35
-      const sx = px + r * 0.85
-      const sy = py
-      const w = tileSize * 0.18
-      const h = tileSize * 0.32
-      context.save()
-      context.fillStyle = '#3a2308'
-      context.strokeStyle = '#7c7b76'
-      context.lineWidth = 1.5
-      // Forme bouclier : rectangle arrondi en bas
-      context.beginPath()
-      context.moveTo(sx - w, sy - h * 0.8)
-      context.lineTo(sx + w, sy - h * 0.8)
-      context.lineTo(sx + w, sy + h * 0.2)
-      context.quadraticCurveTo(sx + w, sy + h * 0.8, sx, sy + h * 0.8)
-      context.quadraticCurveTo(sx - w, sy + h * 0.8, sx - w, sy + h * 0.2)
-      context.closePath()
-      context.fill()
-      context.stroke()
-      // Croix au centre
-      context.strokeStyle = '#7c7b76'
-      context.lineWidth = 1.5
-      context.beginPath()
-      context.moveTo(sx, sy - h * 0.6)
-      context.lineTo(sx, sy + h * 0.6)
-      context.moveTo(sx - w * 0.8, sy)
-      context.lineTo(sx + w * 0.8, sy)
-      context.stroke()
-      context.restore()
-    },
-  },
-  warrior: {
-    draw(context, px, py, tileSize) {
-      const r = tileSize * 0.35
-      context.save()
-      context.fillStyle = '#64748b'
-      context.strokeStyle = '#94a3b8'
-      context.lineWidth = 1.5
-      // Calotte du casque
-      context.beginPath()
-      context.arc(px, py - r * 0.6, r * 0.75, Math.PI, 0)
-      context.closePath()
-      context.fill()
-      context.stroke()
-      // Corne gauche
-      context.fillStyle = '#e2e8f0'
-      context.strokeStyle = '#94a3b8'
-      context.beginPath()
-      context.moveTo(px - r * 0.75, py - r * 0.8)
-      context.lineTo(px - r * 1.25, py - r * 1.5)
-      context.lineTo(px - r * 0.55, py - r * 1.1)
-      context.closePath()
-      context.fill()
-      context.stroke()
-      // Corne droite
-      context.beginPath()
-      context.moveTo(px + r * 0.75, py - r * 0.8)
-      context.lineTo(px + r * 1.25, py - r * 1.5)
-      context.lineTo(px + r * 0.55, py - r * 1.1)
-      context.closePath()
-      context.fill()
-      context.stroke()
-      context.restore()
-    },
-  },
-}
+import { ATTACKS_VISUAL, MONSTERS_VISUAL, CLASSES_VISUAL } from './index.js'
 
 export function initGameCanvas(canvas, getState, dispatch, uiStores) {
   const context = canvas.getContext('2d')
@@ -203,7 +22,7 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
   }
 
   function pushAttackEffect(kind, from, to) {
-    const visual = ATTACK_VISUALS[kind]
+    const visual = ATTACKS_VISUAL[kind]
     if (!visual) return
     effects.push({
       kind,
@@ -224,7 +43,7 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
         if (!curr || !prev) continue
 
         if (curr.x !== prev.x || curr.y !== prev.y) {
-          if (curr.lastAction === 'teleport') {
+          if (curr.lastAction === 'teleport' && prev.lastAction !== 'teleport') {
             effects.push({
               kind: 'teleport',
               entityId: id,
@@ -244,15 +63,12 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
               duration: 200,
             })
           }
-        }
 
-        if (curr.x !== prev.x || curr.y !== prev.y) {
           const tileEffect = state.tileEffects?.find(e =>
               e.x === curr.x &&
               e.y === curr.y &&
               e.activatedAt && Date.now() - e.activatedAt < 1000
           )
-
           if (tileEffect) {
             effects.push({
               kind: 'tile',
@@ -270,14 +86,33 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
               state.entities[e.id] &&
               state.entities[e.id].lastAttacked > e.lastAttacked
           )
-
           if (attacker && attacker.id !== id) {
             const kind = state.entities[attacker.id]?.lastAction ?? 'melee'
-
             pushAttackEffect(
                 kind,
                 tileCenter(attacker.x, attacker.y),
                 tileCenter(prev.x, prev.y),
+            )
+          }
+        }
+      }
+
+      for (const monster of state.monsters ?? []) {
+        const prevMonster = prevState.monsters?.find(m => m.id === monster.id)
+        if (!prevMonster) continue
+
+        if (monster.hp < prevMonster.hp) {
+          const attacker = Object.values(state.entities).find(p => {
+            const prevPlayer = prevState.entities[p.id]
+            return prevPlayer && p.lastAttacked > prevPlayer.lastAttacked
+          })
+
+          if (attacker) {
+            const kind = attacker.lastAction ?? 'melee'
+            pushAttackEffect(
+                kind,
+                tileCenter(attacker.x, attacker.y),
+                tileCenter(prevMonster.x, prevMonster.y),
             )
           }
         }
@@ -324,12 +159,9 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
 
     for (const effect of effects) {
       if (effect.kind !== 'tile') continue
-
       const t = (now - effect.start) / effect.duration
       if (t > 1) continue
-
       const alpha = (1 - t) * 0.6
-
       context.fillStyle =
           effect.type === 'heal'
               ? `rgba(80,220,130,${alpha})`
@@ -353,6 +185,27 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
       context.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1)
     }
 
+    for (const monster of state.monsters ?? []) {
+      const visual = MONSTERS_VISUAL[monster.type]
+      if (!visual) continue
+      const px = monster.x * tileSize + tileSize / 2
+      const py = monster.y * tileSize + tileSize / 2
+      const r  = tileSize * 0.3
+
+      context.save()
+      visual.draw(context, px, py, r, tileSize)
+      context.restore()
+
+      context.fillStyle = '#fff'
+      context.textAlign = 'center'
+      context.font = `${Math.floor(tileSize * 0.14)}px sans-serif`
+      context.fillText(
+          `${monster.hp}/${monster.maxHp}`,
+          px,
+          py + r + 14
+      )
+    }
+
     for (const id in state.entities) {
       const entity = state.entities[id]
       if (!entity) continue
@@ -365,7 +218,7 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
       context.arc(px, py, tileSize * 0.35, 0, Math.PI * 2)
       context.fill()
 
-      const accessory = CLASS_ACCESSORIES[entity.className]
+      const accessory = CLASSES_VISUAL[entity.className]
       if (accessory) accessory.draw(context, px, py, tileSize)
 
       context.fillStyle = '#fff'
@@ -377,7 +230,7 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
 
     for (const effect of effects) {
       if (effect.kind === 'move' || effect.kind === 'tile') continue
-      const visual = ATTACK_VISUALS[effect.kind]
+      const visual = ATTACKS_VISUAL[effect.kind]
       if (!visual) continue
       const t = (now - effect.start) / effect.duration
       visual.draw(context, effect, t, tileSize)
@@ -428,6 +281,14 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
         payload: { id: uiStores.playerId, to: tile },
       })
     } else if (selected === 'melee' || selected === 'fireball' || selected === 'thunder') {
+      const monster = state.monsters?.find(m => m.x === tile.x && m.y === tile.y)
+      if (monster) {
+        dispatch({
+          type: selected === 'melee' ? 'MELEE' : selected === 'fireball' ? 'FIREBALL' : 'THUNDER',
+          payload: { attackerId: uiStores.playerId, targetId: monster.id },
+        })
+        return
+      }
       for (const id in state.entities) {
         const entity = state.entities[id]
         if (entity.x === tile.x && entity.y === tile.y && id !== uiStores.playerId) {

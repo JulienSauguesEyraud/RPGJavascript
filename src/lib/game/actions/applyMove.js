@@ -16,6 +16,12 @@ export function canMove(state, id, to) {
       return false
     }
   }
+  for (const m of state.monsters ?? []) {
+    if (m.x === to.x && m.y === to.y) {
+      state.log.push('Position occupée')
+      return false
+    }
+  }
   if (distance8(actor, to) !== 1) {
     state.log.push('Case hors de portée')
     return false

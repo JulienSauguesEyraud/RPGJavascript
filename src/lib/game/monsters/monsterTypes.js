@@ -1,0 +1,38 @@
+export const MONSTER_TYPES = {
+    goblin: {
+        label: 'Goblin',
+        hp: 10,
+        maxHp: 10,
+        damage: 5,
+        attackDelay: 5000,
+        reward: { maxHp: 5, maxMp: 0 },
+        color: '#4a7c2f',
+    },
+    slime: {
+        label: 'Slime',
+        hp: 10,
+        maxHp: 10,
+        damage: 5,
+        attackDelay: 5000,
+        reward: { maxHp: 0, maxMp: 5 },
+        color: '#2f7c6a',
+    },
+    dragon: {
+        label: 'Dragon',
+        hp: 30,
+        maxHp: 30,
+        damage: 10,
+        attackDelay: 5000,
+        reward: { maxHp: 10, maxMp: 5 },
+        color: '#c0392b',
+    },
+    demon: {
+        label: 'Demon',
+        hp: 30,
+        maxHp: 30,
+        damage: 10,
+        attackDelay: 5000,
+        reward: { maxHp: 5, maxMp: 10 },
+        color: '#6a0dad',
+    },
+}
