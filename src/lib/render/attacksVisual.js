@@ -6,7 +6,7 @@ export const ATTACKS_VISUAL = {
             const x = fx.from.x + (fx.to.x - fx.from.x) * t
             const y = fx.from.y + (fx.to.y - fx.from.y) * t
 
-            // Calcul de l'angle pour orienter le coupure vers la cible
+            // Calcul de l'angle pour orienter la coupure vers la cible
             const angle = Math.atan2(fx.to.y - fx.from.y, fx.to.x - fx.from.x)
 
             context.save()

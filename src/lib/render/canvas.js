@@ -316,7 +316,8 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
         type: selected === 'move' ? 'MOVE' : 'TELEPORT',
         payload: { id: uiStores.playerId, to: tile },
       })
-    } else if (selected === 'melee' || selected === 'fireball' || selected === 'thunder') {
+    }
+    else if (selected === 'melee' || selected === 'fireball' || selected === 'thunder') {
       const monster = state.monsters?.find(m => m.x === tile.x && m.y === tile.y)
       if (monster) {
         dispatch({

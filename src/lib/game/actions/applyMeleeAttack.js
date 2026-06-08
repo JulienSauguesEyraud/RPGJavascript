@@ -6,7 +6,7 @@ export function canMelee(state, attackerId, targetId) {
     state.log.push('Attaquant introuvable');
     return false
   }
-  
+
   if (attackerId === targetId) {
     state.log.push('Vous ne pouvez pas vous attaquer vous même');
     return false
@@ -49,7 +49,6 @@ export function applyMelee(state, attackerId, targetId) {
   const monster = next.monsters?.find(m => m.id === targetId)
   if (monster) {
     monster.hp -= dmg
-    next.log.push(`${attackerId} frappe ${monster.type} pour ${dmg} dégâts`)
   }
   next.log.push(`${attackerId} frappe ${targetId} pour ${dmg} dégâts`)
   return next

@@ -55,7 +55,6 @@ export function applyFireball(state, attackerId, targetId) {
   const monster = next.monsters?.find(m => m.id === targetId)
   if (monster) {
     monster.hp -= dmg
-    next.log.push(`${attackerId} frappe ${monster.type} pour ${dmg} dégâts`)
   }
   next.log.push(`${attackerId} lance un sort sur ${targetId} pour ${dmg} dégâts (-${cost} MP)`)
   return next
@@ -104,7 +103,6 @@ export function applyThunder(state, attackerId, targetId) {
   const monster = next.monsters?.find(m => m.id === targetId)
   if (monster) {
     monster.hp -= dmg
-    next.log.push(`${attackerId} frappe ${monster.type} pour ${dmg} dégâts`)
   }
   next.log.push(`${attackerId} lance un sort sur ${targetId} pour ${dmg} dégâts (-${cost} MP)`)
   return next
