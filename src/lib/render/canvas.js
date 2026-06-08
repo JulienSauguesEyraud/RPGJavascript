@@ -63,6 +63,30 @@ const ATTACK_VISUALS = {
       context.restore()
     },
   },
+  teleport: {
+    duration: 600,
+    draw(context, fx, t, tileSize) {
+      const fadeOut = Math.max(0, 1 - t * 2)
+      const fadeIn  = Math.max(0, t * 2 - 1)
+
+      function drawPortal(x, y, alpha) {
+        if (alpha <= 0) return
+        context.save()
+        context.globalAlpha = alpha
+        context.strokeStyle = '#8ffa8b'
+        context.lineWidth = 2
+        context.beginPath()
+        context.ellipse(x, y, tileSize * 0.28, tileSize * 0.38, 0, 0, Math.PI * 2)
+        context.stroke()
+        context.fillStyle = 'rgb(98 255 0 / 0.49)'
+        context.fill()
+        context.restore()
+      }
+
+      drawPortal(fx.from.x, fx.from.y, fadeOut)
+      drawPortal(fx.to.x,   fx.to.y,   fadeIn)
+    },
+  },
 }
 
 const CLASS_ACCESSORIES = {
@@ -94,8 +118,8 @@ const CLASS_ACCESSORIES = {
       const r = tileSize * 0.35
       const sx = px + r * 0.85
       const sy = py
-      const w  = tileSize * 0.18
-      const h  = tileSize * 0.32
+      const w = tileSize * 0.18
+      const h = tileSize * 0.32
       context.save()
       context.fillStyle = '#3a2308'
       context.strokeStyle = '#7c7b76'
@@ -200,14 +224,26 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
         if (!curr || !prev) continue
 
         if (curr.x !== prev.x || curr.y !== prev.y) {
-          effects.push({
-            kind: 'move',
-            entityId: id,
-            from: tileCenter(prev.x, prev.y),
-            to: tileCenter(curr.x, curr.y),
-            start: performance.now(),
-            duration: 200,
-          })
+          if (curr.lastAction === 'teleport') {
+            effects.push({
+              kind: 'teleport',
+              entityId: id,
+              from: tileCenter(prev.x, prev.y),
+              to: tileCenter(curr.x, curr.y),
+              start: performance.now(),
+              duration: 600,
+            })
+          }
+          else {
+            effects.push({
+              kind: 'move',
+              entityId: id,
+              from: tileCenter(prev.x, prev.y),
+              to: tileCenter(curr.x, curr.y),
+              start: performance.now(),
+              duration: 200,
+            })
+          }
         }
 
         if (curr.x !== prev.x || curr.y !== prev.y) {
@@ -252,6 +288,12 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
   })
 
   function getDisplayPos(id, entity, now) {
+    for (const effect of effects) {
+      if (effect.kind === 'teleport' && effect.entityId === id) {
+        return null
+      }
+    }
+
     for (const effect of effects) {
       if (effect.kind !== 'move' || effect.entityId !== id) continue
       const t = Math.min((now - effect.start) / effect.duration, 1)
@@ -314,7 +356,9 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
     for (const id in state.entities) {
       const entity = state.entities[id]
       if (!entity) continue
-      const { x: px, y: py } = getDisplayPos(id, entity, now)
+      const pos = getDisplayPos(id, entity, now)
+      if (!pos) continue
+      const { x: px, y: py } = pos
 
       context.beginPath()
       context.fillStyle = id === 'player1' ? '#4cf' : '#f66'
@@ -378,8 +422,11 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
     const selected = uiStores.selected
     const state = getState()
 
-    if (selected === 'move') {
-      dispatch({ type: 'MOVE', payload: { id: uiStores.playerId, to: tile } })
+    if (selected === 'move' || selected === 'teleport') {
+      dispatch({
+        type: selected === 'move' ? 'MOVE' : 'TELEPORT',
+        payload: { id: uiStores.playerId, to: tile },
+      })
     } else if (selected === 'melee' || selected === 'fireball' || selected === 'thunder') {
       for (const id in state.entities) {
         const entity = state.entities[id]

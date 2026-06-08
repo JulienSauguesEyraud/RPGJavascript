@@ -7,7 +7,7 @@ export function canMelee(state, attackerId, targetId) {
     state.log.push('Attaquant ou cible introuvable')
     return false
   }
-  if(attackerId === targetId) {
+  if (attackerId === targetId) {
     state.log.push('Vous ne pouvez pas vous attaquer vous même')
     return false
   }
@@ -23,12 +23,6 @@ export function applyMelee(state, attackerId, targetId) {
   const attacker = next.entities[attackerId]
   const dmg = 5 + (attacker.meleeClassBonus ?? 0) + (attacker.meleeBonus ?? 0)
   delete attacker.meleeBonus
-  if (attacker.doubleAttack) {
-    attacker.doubleAttack = false
-  }
-  else {
-    attacker.hasAttacked = true
-  }
   next.entities[targetId].hp -= dmg
   next.log.push(`${attackerId} frappe ${targetId} pour ${dmg} dégâts`)
   return next

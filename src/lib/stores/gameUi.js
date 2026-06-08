@@ -1,3 +1,3 @@
 import { writable } from 'svelte/store'
 
-export const selectedAction = writable('move') // 'move' | 'melee' | 'fireball' | 'pass'
+export const selectedAction = writable('move') // 'move' | 'melee' | 'fireball' | 'thunder | 'pass'

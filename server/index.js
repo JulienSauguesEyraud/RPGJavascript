@@ -6,6 +6,7 @@ import {
   canMelee, applyMelee,
   canFireball, applyFireball,
   canThunder, applyThunder,
+  canTeleport, applyTeleport,
   TILE_EFFECT_TRIGGERS,
   resolveTileTrigger,
   createEventEffect,
@@ -127,17 +128,17 @@ io.on('connection', (socket) => {
   })
 
   socket.on('action', (action) => {
-    const code     = socket.data.code
+    const code = socket.data.code
     const playerId = socket.data.playerId
-    const room     = rooms[code]
+    const room = rooms[code]
     if (!room || !room.state) return
 
-    const now    = Date.now()
-    let next     = structuredClone(room.state)
+    const now = Date.now()
+    let next = structuredClone(room.state)
     const entity = next.entities[playerId]
     if (!entity) return
 
-    const cooldownMove   = entity.cooldownMove   ?? 3000
+    const cooldownMove = entity.cooldownMove   ?? 3000
     const cooldownAttack = entity.cooldownAttack ?? 5000
 
     if (action.type === 'MOVE') {
@@ -167,7 +168,11 @@ io.on('connection', (socket) => {
         return
       }
       next = applyMelee(next, playerId, targetId)
-      next.entities[playerId].lastAttacked = now
+      if (next.entities[playerId].doubleAttack) {
+        next.entities[playerId].doubleAttack = false
+      } else {
+        next.entities[playerId].lastAttacked = now
+      }
       next.entities[playerId].lastAction = 'melee'
     }
     else if (action.type === 'FIREBALL') {
@@ -182,7 +187,11 @@ io.on('connection', (socket) => {
         return
       }
       next = applyFireball(next, playerId, targetId)
-      next.entities[playerId].lastAttacked = now
+      if (next.entities[playerId].doubleAttack) {
+        next.entities[playerId].doubleAttack = false
+      } else {
+        next.entities[playerId].lastAttacked = now
+      }
       next.entities[playerId].lastAction = 'fireball'
     }
     else if (action.type === 'THUNDER') {
@@ -197,8 +206,32 @@ io.on('connection', (socket) => {
         return
       }
       next = applyThunder(next, playerId, targetId)
-      next.entities[playerId].lastAttacked = now
+      if (next.entities[playerId].doubleAttack) {
+        next.entities[playerId].doubleAttack = false
+      } else {
+        next.entities[playerId].lastAttacked = now
+      }
       next.entities[playerId].lastAction = 'thunder'
+    }
+     else if (action.type === 'TELEPORT') {
+      const { to } = action.payload
+      if (now - entity.lastAttacked < cooldownAttack) {
+        next.log.push('Attaque en recharge')
+        sendToPlayer(room, playerId, next)
+        return
+      }
+      if (!canTeleport(next, playerId, to)) {
+        sendToPlayer(room, playerId, next)
+        return
+      }
+      next = applyTeleport(next, playerId, to)
+      if (next.entities[playerId].doubleAttack) {
+        next.entities[playerId].doubleAttack = false
+      } else {
+        next.entities[playerId].lastAttacked = now
+      }
+      next.entities[playerId].lastAction = 'teleport'
+      next = resolveTileTrigger(next, playerId, TILE_EFFECT_TRIGGERS.ON_ENTER)
     }
     else return
 

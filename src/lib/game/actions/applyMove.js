@@ -28,6 +28,6 @@ export function applyMove(state, id, to) {
   next.entities[id].x = to.x
   next.entities[id].y = to.y
   next.entities[id].hasMoved = true
-  next.log.push(`${id} se deplace en (${to.x},${to.y})`)
+  next.log.push(`${id} se déplace en (${to.x},${to.y})`)
   return next
 }

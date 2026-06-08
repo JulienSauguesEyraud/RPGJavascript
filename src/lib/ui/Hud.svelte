@@ -99,6 +99,12 @@
                 onclick={() => choose('thunder')}
         >Tonnerre</button>
         <p>(MP:10/Portée:∞)</p>
+        <button
+                class:active={$selectedAction === 'teleport'}
+                disabled={cooldownAttack() > 0}
+                onclick={() => choose('teleport')}
+        >Téléportation</button>
+        <p>(MP:5/Portée:∞)</p>
       </div>
       <div class="bar">
         <div class="bar-fill attack" style="width:{(cooldownAttack()/COOLDOWN_ATTACK)*100}%"></div>
@@ -173,14 +179,11 @@
   }
 
   .magicAttacks {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     align-items: center;
-    justify-content: center;
     width: 100%;
-  }
-  .magicAttacks button {
-    margin-top: 8px;
+    gap: 8px;
   }
 
   .actions button {
