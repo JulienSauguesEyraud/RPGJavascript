@@ -24,11 +24,20 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
   function pushAttackEffect(kind, from, to) {
     const visual = ATTACKS_VISUAL[kind]
     if (!visual) return
+
+    let startTime = performance.now()
+
+    const activeEffects = effects.filter(e => e.kind === kind)
+    if (activeEffects.length > 0) {
+      const latest = activeEffects[activeEffects.length - 1]
+      startTime = Math.max(startTime, latest.start + visual.duration * 0.4)
+    }
+
     effects.push({
       kind,
       from,
       to,
-      start: performance.now(),
+      start: startTime,
       duration: visual.duration,
     })
   }
@@ -43,23 +52,31 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
         if (!curr || !prev) continue
 
         if (curr.x !== prev.x || curr.y !== prev.y) {
+          let startTime = performance.now()
+
           if (curr.lastAction === 'teleport' && prev.lastAction !== 'teleport') {
             effects.push({
               kind: 'teleport',
               entityId: id,
               from: tileCenter(prev.x, prev.y),
               to: tileCenter(curr.x, curr.y),
-              start: performance.now(),
+              start: startTime,
               duration: 600,
             })
           }
           else {
+            const entityMoves = effects.filter(e => e.kind === 'move' && e.entityId === id)
+            if (entityMoves.length > 0) {
+              const latest = entityMoves[entityMoves.length - 1]
+              startTime = Math.max(startTime, latest.start + latest.duration)
+            }
+
             effects.push({
               kind: 'move',
               entityId: id,
               from: tileCenter(prev.x, prev.y),
               to: tileCenter(curr.x, curr.y),
-              start: performance.now(),
+              start: startTime,
               duration: 200,
             })
           }
@@ -125,18 +142,28 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
   function getDisplayPos(id, entity, now) {
     for (const effect of effects) {
       if (effect.kind === 'teleport' && effect.entityId === id) {
-        return null
+        if (now >= effect.start && now <= effect.start + effect.duration) return null
       }
     }
 
-    for (const effect of effects) {
-      if (effect.kind !== 'move' || effect.entityId !== id) continue
-      const t = Math.min((now - effect.start) / effect.duration, 1)
-      return {
-        x: effect.from.x + (effect.to.x - effect.from.x) * t,
-        y: effect.from.y + (effect.to.y - effect.from.y) * t,
+    const moves = effects.filter(e => e.kind === 'move' && e.entityId === id)
+    if (moves.length > 0) {
+      const activeMove = moves.find(e => now >= e.start && now <= e.start + e.duration)
+      if (activeMove) {
+        const t = (now - activeMove.start) / activeMove.duration
+        return {
+          x: activeMove.from.x + (activeMove.to.x - activeMove.from.x) * t,
+          y: activeMove.from.y + (activeMove.to.y - activeMove.from.y) * t,
+        }
+      }
+
+      const futureMoves = moves.filter(e => now < e.start)
+      if (futureMoves.length > 0) {
+        futureMoves.sort((a, b) => a.start - b.start)
+        return futureMoves[0].from
       }
     }
+
     return tileCenter(entity.x, entity.y)
   }
 
@@ -145,7 +172,7 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
     if (!state) return
 
     for (let i = effects.length - 1; i >= 0; i--) {
-      if (now - effects[i].start >= effects[i].duration) effects.splice(i, 1)
+      if (now >= effects[i].start + effects[i].duration) effects.splice(i, 1)
     }
 
     context.clearRect(0, 0, canvasWidth, canvasHeight)
@@ -158,7 +185,7 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
     }
 
     for (const effect of effects) {
-      if (effect.kind !== 'tile') continue
+      if (effect.kind !== 'tile' || now < effect.start) continue
       const t = (now - effect.start) / effect.duration
       if (t > 1) continue
       const alpha = (1 - t) * 0.6
@@ -229,7 +256,7 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
     }
 
     for (const effect of effects) {
-      if (effect.kind === 'move' || effect.kind === 'tile') continue
+      if (effect.kind === 'move' || effect.kind === 'tile' || now < effect.start) continue
       const visual = ATTACKS_VISUAL[effect.kind]
       if (!visual) continue
       const t = (now - effect.start) / effect.duration
