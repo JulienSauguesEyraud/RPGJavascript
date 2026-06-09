@@ -53,12 +53,22 @@ function startRoomLoop(code) {
 
     for (const id in room.state.entities) {
       const entity = room.state.entities[id]
-      if (!entity || !entity.mpRegen || !entity.mpRegenInterval) continue
-      if (entity.mp >= entity.maxMp) continue
-      if (now - entity.lastMpRegen >= entity.mpRegenInterval) {
-        room.state.entities[id].mp = Math.min(entity.maxMp, entity.mp + entity.mpRegen)
-        room.state.entities[id].lastMpRegen = now
-        changed = true
+      if (!entity) continue
+      if (entity.mpRegen || entity.mpRegenInterval) {
+        if (entity.mp >= entity.maxMp) continue
+        if (now - entity.lastMpRegen >= entity.mpRegenInterval) {
+          room.state.entities[id].mp = Math.min(entity.maxMp, entity.mp + entity.mpRegen)
+          room.state.entities[id].lastMpRegen = now
+          changed = true
+        }
+      }
+      else if (entity.hpRegen || entity.hpRegenInterval) {
+        if (entity.hp >= entity.maxHp) continue
+        if (now - entity.lastHpRegen >= entity.hpRegenInterval) {
+          room.state.entities[id].hp = Math.min(entity.maxHp, entity.hp + entity.hpRegen)
+          room.state.entities[id].lastHpRegen = now
+          changed = true
+        }
       }
     }
 
@@ -79,6 +89,7 @@ function startRoomLoop(code) {
           if (now - monster.adjacentSince[playerId] >= def.attackDelay) {
             room.state.entities[playerId].hp -= def.damage
             monster.adjacentSince[playerId] = now
+            monster.lastAttack = now
             room.state.log.push(`${monster.type} attaque ${playerId} pour ${def.damage} dégâts`)
             changed = true
 

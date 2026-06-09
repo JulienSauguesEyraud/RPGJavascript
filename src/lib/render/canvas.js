@@ -1,5 +1,6 @@
 import { gameState } from '../stores/gameState.js'
 import { ATTACKS_VISUAL, MONSTERS_VISUAL, CLASSES_VISUAL } from './index.js'
+import {distance8} from "../game/index.js";
 
 export function initGameCanvas(canvas, getState, dispatch, uiStores) {
   const context = canvas.getContext('2d')
@@ -119,18 +120,20 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
               dragon: 'thunder',
             }
             const attackingMonsters = state.monsters?.filter(m => {
-              const dx = Math.abs(m.x - curr.x)
-              const dy = Math.abs(m.y - curr.y)
-              return Math.max(dx, dy) === 1
+              const prevMonster = prevState.monsters?.find(pm => pm.id === m.id)
+              if (!prevMonster) return false
+              return m.lastAttack && m.lastAttack !== prevMonster.lastAttack
             }) ?? []
 
             for (const attackingMonster of attackingMonsters) {
-              const kind = MONSTER_ATTACK_KIND[attackingMonster.type] ?? 'melee'
-              pushAttackEffect(
-                  kind,
-                  tileCenter(attackingMonster.x, attackingMonster.y),
-                  tileCenter(curr.x, curr.y),
-              )
+              if (distance8(attackingMonster, curr) === 1) {
+                const kind = MONSTER_ATTACK_KIND[attackingMonster.type] ?? 'melee'
+                pushAttackEffect(
+                    kind,
+                    tileCenter(attackingMonster.x, attackingMonster.y),
+                    tileCenter(curr.x, curr.y),
+                )
+              }
             }
           }
         }
@@ -376,6 +379,7 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
   frameId = requestAnimationFrame(loop)
 
   return {
+    resize,
     destroy() {
       unsub()
       observer.disconnect()
