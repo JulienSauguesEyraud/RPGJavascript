@@ -65,14 +65,13 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
               to: tileCenter(curr.x, curr.y),
               start: performance.now(),
               duration: 600,
-            });
+            })
           } else {
-            const entityMoves = effects.filter(e => e.kind === 'move' && e.entityId === id);
+            const entityMoves = effects.filter(e => e.kind === 'move' && e.entityId === id)
             if (entityMoves.length > 0) {
               const latest = entityMoves[entityMoves.length - 1]
               startTime = Math.max(startTime, latest.start + latest.duration)
             }
-
             effects.push({
               kind: 'move',
               entityId: id,
@@ -101,43 +100,70 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
         }
 
         if (curr.hp < prev.hp) {
-          const attacker = Object.values(prevState.entities).find(e =>
-              state.entities[e.id] &&
-              state.entities[e.id].lastAttacked > e.lastAttacked
+          const playerAttacker = Object.values(prevState.entities).find(e =>
+              state.entities[e.id] && state.entities[e.id].lastAttacked > e.lastAttacked
           )
-          if (attacker && attacker.id !== id) {
-            const kind = state.entities[attacker.id]?.lastAction ?? 'melee'
+
+          if (playerAttacker && playerAttacker.id !== id) {
+            const kind = state.entities[playerAttacker.id]?.lastAction ?? 'melee'
             pushAttackEffect(
                 kind,
-                tileCenter(attacker.x, attacker.y),
+                tileCenter(playerAttacker.x, playerAttacker.y),
                 tileCenter(prev.x, prev.y),
             )
+          } else if (!playerAttacker) {
+            const MONSTER_ATTACK_KIND = {
+              goblin: 'melee',
+              slime:  'melee',
+              demon:  'fireball',
+              dragon: 'thunder',
+            }
+            const attackingMonsters = state.monsters?.filter(m => {
+              const dx = Math.abs(m.x - curr.x)
+              const dy = Math.abs(m.y - curr.y)
+              return Math.max(dx, dy) === 1
+            }) ?? []
+
+            for (const attackingMonster of attackingMonsters) {
+              const kind = MONSTER_ATTACK_KIND[attackingMonster.type] ?? 'melee'
+              pushAttackEffect(
+                  kind,
+                  tileCenter(attackingMonster.x, attackingMonster.y),
+                  tileCenter(curr.x, curr.y),
+              )
+            }
           }
         }
       }
 
       for (const prevMonster of prevState.monsters ?? []) {
-        const currentMonster = state.monsters?.find(m => m.id === prevMonster.id);
+        const currentMonster = state.monsters?.find(m => m.id === prevMonster.id)
 
         if (currentMonster) {
           if (currentMonster.hp < prevMonster.hp) {
             const attacker = Object.values(state.entities).find(p => {
-              const prevPlayer = prevState.entities[p.id];
-              return prevPlayer && p.lastAttacked > prevPlayer.lastAttacked;
-            });
+              const prevPlayer = prevState.entities[p.id]
+              return prevPlayer && p.lastAttacked > prevPlayer.lastAttacked
+            })
             if (attacker) {
-              pushAttackEffect(attacker.lastAction ?? 'melee', tileCenter(attacker.x, attacker.y), tileCenter(currentMonster.x, currentMonster.y));
+              pushAttackEffect(
+                  attacker.lastAction ?? 'melee',
+                  tileCenter(attacker.x, attacker.y),
+                  tileCenter(currentMonster.x, currentMonster.y),
+              )
             }
           }
-        }
-        else {
+        } else {
           const attacker = Object.values(state.entities).find(p => {
-            const prevPlayer = prevState.entities[p.id];
-            return prevPlayer && p.lastAttacked > prevPlayer.lastAttacked;
-          });
-
+            const prevPlayer = prevState.entities[p.id]
+            return prevPlayer && p.lastAttacked > prevPlayer.lastAttacked
+          })
           if (attacker) {
-            pushAttackEffect(attacker.lastAction ?? 'melee', tileCenter(attacker.x, attacker.y), tileCenter(prevMonster.x, prevMonster.y));
+            pushAttackEffect(
+                attacker.lastAction ?? 'melee',
+                tileCenter(attacker.x, attacker.y),
+                tileCenter(prevMonster.x, prevMonster.y),
+            )
           }
         }
       }
@@ -145,7 +171,6 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
 
     prevState = state
   })
-
   function getDisplayPos(id, entity, now) {
     const teleportEffect = effects.find(e => e.kind === 'teleport' && e.entityId === id);
     if (teleportEffect) {
