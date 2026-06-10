@@ -62,3 +62,12 @@ export function joinRoom(code, className) {
 export function dispatch(action) {
   if (socket) socket.emit('action', action)
 }
+
+export function leaveRoom() {
+  if (socket) {
+    lobbyStatus.set('idle')
+    roomCode.set(null)
+    myPlayerId.set(null)
+    socket.emit('leave')
+  }
+}

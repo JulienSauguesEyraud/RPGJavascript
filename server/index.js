@@ -42,6 +42,22 @@ function sendToPlayer(room, playerId, state) {
   if (socketId) io.to(socketId).emit('state', state)
 }
 
+function handleLeave(socket) {
+  const code = socket.data.code
+  const room = rooms[code]
+  if (!room) return
+  const wasPlayer = room.slots.player1 === socket.id ? 'player1'
+      : room.slots.player2 === socket.id ? 'player2'
+          : null
+  if (wasPlayer) {
+    room.slots[wasPlayer] = null
+    clearInterval(room.interval)
+    io.to(code).emit('opponent_left')
+  }
+  if (!room.slots.player1 && !room.slots.player2) {
+    delete rooms[code]
+  }
+}
 function startRoomLoop(code) {
   const room = rooms[code]
   if (!room) return
@@ -130,8 +146,6 @@ function startRoomLoop(code) {
 }
 
 io.on('connection', (socket) => {
-  console.log('connexion', socket.id)
-
   socket.on('create', (className) => {
     const code = generateCode()
     rooms[code] = {
@@ -153,26 +167,43 @@ io.on('connection', (socket) => {
       socket.emit('error', 'Code invalide')
       return
     }
-    if (room.slots.player2) {
-      socket.emit('error', 'Partie pleine')
-      return
+    if (!room.slots.player2) {
+      room.slots.player2 = socket.id
+      room.classes.player2 = className ?? 'warrior'
+      socket.join(code)
+      socket.data.code = code
+      socket.data.playerId = 'player2'
+
+      const state = createInitialState(room.classes)
+      state.lastEventAt = Date.now()
+      room.state = state
+
+      socket.emit('joined', code)
+      socket.emit('assigned', 'player2')
+      broadcastRoom(code)
+      io.to(room.slots.player1).emit('opponent_joined')
+      startRoomLoop(code)
     }
+    else if (!room.slots.player1) {
+      room.slots.player1 = socket.id
+      room.classes.player1 = className ?? 'warrior'
+      socket.join(code)
+      socket.data.code = code
+      socket.data.playerId = 'player1'
 
-    room.slots.player2 = socket.id
-    room.classes.player2 = className ?? 'warrior'
-    socket.join(code)
-    socket.data.code = code
-    socket.data.playerId = 'player2'
+      const state = createInitialState(room.classes)
+      state.lastEventAt = Date.now()
+      room.state = state
 
-    const state = createInitialState(room.classes)
-    state.lastEventAt = Date.now()
-    room.state = state
-
-    socket.emit('joined', code)
-    socket.emit('assigned', 'player2')
-    broadcastRoom(code)
-    io.to(room.slots.player1).emit('opponent_joined')
-    startRoomLoop(code)
+      socket.emit('joined', code)
+      socket.emit('assigned', 'player1')
+      broadcastRoom(code)
+      io.to(room.slots.player2).emit('opponent_joined')
+      startRoomLoop(code)
+    }
+    else {
+      socket.emit('error', 'Partie pleine')
+    }
   })
 
   socket.on('action', (action) => {
@@ -306,23 +337,8 @@ io.on('connection', (socket) => {
     broadcastRoom(socket.data.code)
   })
 
-  socket.on('disconnect', () => {
-    const code = socket.data.code
-    const room = rooms[code]
-    if (!room) return
-    const wasPlayer = room.slots.player1 === socket.id ? 'player1'
-        : room.slots.player2 === socket.id ? 'player2'
-            : null
-    if (wasPlayer) {
-      room.slots[wasPlayer] = null
-      clearInterval(room.interval)
-      io.to(code).emit('opponent_left')
-    }
-    if (!room.slots.player1 && !room.slots.player2) {
-      delete rooms[code]
-      console.log(`Room ${code} supprimée`)
-    }
-  })
+  socket.on('leave', () => handleLeave(socket));
+  socket.on('disconnect', () => handleLeave(socket));
 })
 
 httpServer.listen(3001, () => console.log('Game server on :3001'))

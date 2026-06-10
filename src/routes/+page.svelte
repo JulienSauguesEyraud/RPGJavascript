@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
   import { gameState, dispatch, myPlayerId,
     roomCode, lobbyStatus, lobbyError,
-    createRoom, joinRoom } from '../lib/stores/gameState.js'
+    createRoom, joinRoom, leaveRoom } from '../lib/stores/gameState.js'
   import { selectedAction } from '../lib/stores/gameUi.js'
   import { initGameCanvas } from '../lib/render/canvas.js'
   import { CLASSES } from '../lib/game/classes.js'
@@ -73,7 +73,13 @@
 
 <div class="page" class:hidden={$lobbyStatus !== 'playing'}>
   {#if $roomCode}
-    <div class="room-badge">Room : <strong>{$roomCode}</strong></div>
+    <div class="room-badge">
+      Room : <strong>{$roomCode}</strong>
+    </div>
+
+    <button class="leave-btn" onclick={leaveRoom}>
+      Quitter
+    </button>
   {/if}
   <div class="arena">
     <canvas bind:this={canvas}></canvas>
@@ -195,7 +201,19 @@
   border-radius: 6px;
   border: 1px solid rgba(125, 211, 252, 0.25);
   pointer-events: none;
-}
+  }
+
+  .leave-btn {
+    position: absolute;
+    top: 45px;
+    left: 10px;
+    padding: 8px;
+    background: #7f1d1d;
+  }
+
+  .leave-btn:hover {
+    background: #991b1b;
+  }
   .section-title { margin: 0 0 8px; opacity: 0.7; font-size: 0.9rem; text-align: center; }
 
   .class-cards {
