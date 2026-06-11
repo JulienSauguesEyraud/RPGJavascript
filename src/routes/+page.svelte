@@ -5,7 +5,7 @@
     createRoom, joinRoom, leaveRoom } from '../lib/stores/gameState.js'
   import { selectedAction } from '../lib/stores/gameUi.js'
   import { initGameCanvas } from '../lib/render/canvas.js'
-  import { CLASSES } from '../lib/game/classes.js'
+  import { CLASSES } from '../lib/game/classes/classes.js'
   import Hud from '../lib/ui/Hud.svelte'
 
   let canvas

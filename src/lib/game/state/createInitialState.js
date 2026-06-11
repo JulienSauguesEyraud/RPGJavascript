@@ -1,5 +1,5 @@
 import {createMonsters, createTileEffects} from '../index.js'
-import { CLASSES } from '../classes.js'
+import { CLASSES } from '../classes/classes.js'
 
 export function createInitialState(classChoices = {}) {
   const width = 8

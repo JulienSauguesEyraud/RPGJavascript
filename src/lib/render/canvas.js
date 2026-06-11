@@ -55,9 +55,7 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
         if (curr.x !== prev.x || curr.y !== prev.y) {
           let startTime = performance.now()
 
-          const isTeleport = curr.lastAction === 'teleport' ||
-              (Math.abs(curr.x - prev.x) > 1 || Math.abs(curr.y - prev.y) > 1);
-
+          const isTeleport = curr.lastAction === 'teleport'
           if (isTeleport) {
             effects.push({
               kind: 'teleport',

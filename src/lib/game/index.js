@@ -6,6 +6,9 @@ export { canThunder, applyThunder } from './actions/applyMagicAttack.js'
 export { canTeleport, applyTeleport } from './actions/applyMagicAttack.js'
 export { distance8 } from './resolution/distance.js'
 export { checkDeadMonsters } from './monsters/index.js'
+export { checkClassesTimeSpecificities } from './classes/classesTimeSpecificities.js'
+export { checkMonstersAttacks } from './monsters/CheckMonstersAttacks.js'
+export { checkEventModification } from './events/checkEventModification.js'
 export {
   TILE_EFFECT_TRIGGERS,
   TILE_EFFECT_TYPES,
