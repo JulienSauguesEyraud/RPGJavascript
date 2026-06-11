@@ -1,6 +1,6 @@
 import { gameState } from '../stores/gameState.js'
 import { ATTACKS_VISUAL, MONSTERS_VISUAL, CLASSES_VISUAL } from './index.js'
-import {distance8} from "../game/index.js";
+import {distanceFromPlayer} from "../game/index.js";
 
 export function initGameCanvas(canvas, getState, dispatch, uiStores) {
   const context = canvas.getContext('2d')
@@ -124,7 +124,7 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
             }) ?? []
 
             for (const attackingMonster of attackingMonsters) {
-              if (distance8(attackingMonster, curr) === 1) {
+              if (distanceFromPlayer(attackingMonster, curr) === 1) {
                 const kind = MONSTER_ATTACK_KIND[attackingMonster.type] ?? 'melee'
                 pushAttackEffect(
                     kind,

@@ -1,4 +1,4 @@
-import { distance8 } from '../index.js'
+import { distanceFromPlayer } from '../index.js'
 
 export function canFireball(state, attackerId, targetId) {
   const attacker = state.entities[attackerId]
@@ -18,7 +18,7 @@ export function canFireball(state, attackerId, targetId) {
 
   const target = state.entities[targetId]
   if (target) {
-    if (distance8(attacker, target) > 2) {
+    if (distanceFromPlayer(attacker, target) > 2) {
       state.log.push('Cible hors de portée');
       return false
     }
@@ -27,7 +27,7 @@ export function canFireball(state, attackerId, targetId) {
 
   const monster = state.monsters?.find(m => m.id === targetId)
   if (monster) {
-    if (distance8(attacker, monster) > 2) {
+    if (distanceFromPlayer(attacker, monster) > 2) {
       state.log.push('Cible hors de portée');
       return false
     }

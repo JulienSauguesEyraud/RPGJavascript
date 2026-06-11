@@ -2,55 +2,61 @@
   import { gameState, myPlayerId } from '../stores/gameState.js'
   import { selectedAction } from '../stores/gameUi.js'
 
-  const COOLDOWN_MOVE   = $derived(me?.cooldownMove   ?? 3000)
+  const COOLDOWN_MOVE = $derived(me?.cooldownMove ?? 3000)
   const COOLDOWN_ATTACK = $derived(me?.cooldownAttack ?? 5000)
-  const EVENT_INTERVAL  = 20000
-  const EVENT_DURATION  = 5000
+  const EVENT_INTERVAL = 20000
+  const EVENT_DURATION = 5000
 
   let now = $state(Date.now())
   setInterval(() => { now = Date.now() }, 100)
 
   const me = $derived($gameState?.entities?.[$myPlayerId])
+  const p1 = $derived($gameState?.entities?.player1)
+  const p2 = $derived($gameState?.entities?.player2)
+  const activeEvent = $derived($gameState?.activeEvent)
+  const lastEventAt = $derived($gameState?.lastEventAt ?? 0)
+  const gameLogs = $derived($gameState?.log ?? [])
 
   function cooldownMove() {
     if (!me) return 0
     return Math.max(0, COOLDOWN_MOVE - (now - (me.lastMoved ?? 0)))
   }
+
   function cooldownAttack() {
     if (!me) return 0
     return Math.max(0, COOLDOWN_ATTACK - (now - (me.lastAttacked ?? 0)))
   }
+
   function timeUntilEvent() {
-    const state = $gameState
-    if (!state || state.activeEvent) return 0
-    return Math.max(0, EVENT_INTERVAL - (now - (state.lastEventAt ?? 0)))
+    if (!$gameState || activeEvent) return 0
+    return Math.max(0, EVENT_INTERVAL - (now - lastEventAt))
   }
+
   function timeLeftEvent() {
-    const state = $gameState
-    if (!state?.activeEvent) return 0
-    return Math.max(0, EVENT_DURATION - (now - (state.activeEvent.startedAt ?? 0)))
+    if (!activeEvent) return 0
+    return Math.max(0, EVENT_DURATION - (now - (activeEvent.startedAt ?? 0)))
   }
 
   function choose(action) { selectedAction.set(action) }
 </script>
 
-<div class="lastLog">{$gameState.log[$gameState.log.length - 1]}</div>
+<div class="lastLog">{gameLogs[gameLogs.length - 1]}</div>
 
 <div class="hud">
   <div class="stats">
     <div>
-      <strong>Joueur 1</strong> [{$gameState?.entities?.player1?.className ?? ''}]
-      HP: {$gameState?.entities?.player1?.hp}/{$gameState?.entities?.player1?.maxHp}
-      MP: {$gameState?.entities?.player1?.mp}/{$gameState?.entities?.player1?.maxMp}
+      <strong>Joueur 1</strong> [{p1?.className ?? ''}]
+      HP: {p1?.hp}/{p1?.maxHp}
+      MP: {p1?.mp}/{p1?.maxMp}
     </div>
     <div>
-      <strong>Joueur 2</strong> [{$gameState?.entities?.player2?.className ?? ''}]
-      HP: {$gameState?.entities?.player2?.hp}/{$gameState?.entities?.player2?.maxHp}
-      MP: {$gameState?.entities?.player2?.mp}/{$gameState?.entities?.player2?.maxMp}
+      <strong>Joueur 2</strong> [{p2?.className ?? ''}]
+      HP: {p2?.hp}/{p2?.maxHp}
+      MP: {p2?.mp}/{p2?.maxMp}
     </div>
     <div class="event-zone">
-      {#if $gameState?.activeEvent}
-        <span class="event-active">{$gameState.activeEvent.type} — {(timeLeftEvent() / 1000).toFixed(1)}s</span>
+      {#if activeEvent}
+        <span class="event-active">{activeEvent.type} — {(timeLeftEvent() / 1000).toFixed(1)}s</span>
         <div class="bar"><div class="bar-fill event" style="width:{(timeLeftEvent()/EVENT_DURATION)*100}%"></div></div>
       {:else}
         <span class="event-waiting">Prochain événement dans {(timeUntilEvent()/1000).toFixed(0)}s</span>
@@ -114,7 +120,7 @@
   </div>
 
   <div class="log">
-    {#each ($gameState?.log ?? []).slice(-7) as entry}
+    {#each gameLogs.slice(-7) as entry}
       <div>{entry}</div>
     {/each}
   </div>

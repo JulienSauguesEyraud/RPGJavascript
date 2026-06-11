@@ -1,4 +1,4 @@
-import {createInitialState, distance8, MONSTER_TYPES} from "../index.js";
+import {createInitialState, distanceFromPlayer, MONSTER_TYPES} from "../index.js";
 
 export function checkMonstersAttacks(room, now) {
     let changed = false
@@ -9,7 +9,7 @@ export function checkMonstersAttacks(room, now) {
             const player = room.state.entities[playerId]
             if (!player) return false
 
-            if (distance8(player, monster) === 1) {
+            if (distanceFromPlayer(player, monster) === 1) {
                 if (!monster.adjacentSince[playerId]) {
                     monster.adjacentSince[playerId] = now
                 }
