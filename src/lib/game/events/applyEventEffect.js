@@ -20,6 +20,10 @@ export function applyEventEffect(state, entityId, effect) {
     entity.doubleAttack = effect.amount
     next.log.push(`${entityId} peut attaquer deux fois d'affilée`)
   }
+  else if (effect.type === EVENT_EFFECT_TYPES.INFINITE_MOVE) {
+    entity.infiniteMove = effect.amount
+    next.log.push(`${entityId} peut se déplacer autant qu'il le souhaite`)
+  }
 
   return next
 }
@@ -40,6 +44,9 @@ export function removeEventEffect(state, entityId, effect) {
   }
   else if (effect.type === EVENT_EFFECT_TYPES.DOUBLE_ATTACK) {
     entity.doubleAttack = false
+  }
+  else if (effect.type === EVENT_EFFECT_TYPES.INFINITE_MOVE) {
+    entity.infiniteMove = false
   }
 
   return next

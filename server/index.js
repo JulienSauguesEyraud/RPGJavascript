@@ -272,7 +272,9 @@ io.on('connection', (socket) => {
         return
       }
       next = applyMove(next, playerId, to)
-      next.entities[playerId].lastMoved = now
+      if(!next.entities[playerId].infiniteMove) {
+        next.entities[playerId].lastMoved = now
+      }
       next.entities[playerId].lastAction = 'move'
       next = resolveTileTrigger(next, playerId, TILE_EFFECT_TRIGGERS.ON_ENTER)
     }
