@@ -388,4 +388,114 @@ export const CLASSES_VISUAL = {
             context.restore()
         },
     },
+    gambler: {
+        draw(context, px, py, tileSize) {
+            const r = tileSize * 0.35
+
+            context.save()
+
+            // 1. OMBRE PORTÉE GÉNÉRALE
+            context.shadowColor = 'rgba(0, 0, 0, 0.4)'
+            context.shadowBlur = 4
+            context.shadowOffsetY = 2
+
+            // 2. BORD DU CHAPEAU (Remonté pour s'aligner avec le Mage)
+            context.fillStyle = '#1e293b'
+            context.strokeStyle = '#334155'
+            context.lineWidth = 1.5
+
+            context.beginPath()
+            context.ellipse(
+                px,
+                py - r * 0.55, // Remonté
+                r * 1.1,
+                r * 0.25,
+                0,
+                0,
+                Math.PI * 2
+            )
+            context.fill()
+            context.stroke()
+
+            // Reset de l'ombre
+            context.shadowBlur = 0
+            context.shadowOffsetY = 0
+
+            // 3. CORPS DU CHAPEAU
+            context.beginPath()
+            context.moveTo(px - r * 0.65, py - r * 0.6) // Remonté
+            context.lineTo(px - r * 0.75, py - r * 1.4) // Remonté
+            context.quadraticCurveTo(
+                px,
+                py - r * 1.55, // Remonté
+                px + r * 0.75,
+                py - r * 1.4  // Remonté
+            )
+            context.lineTo(px + r * 0.65, py - r * 0.6) // Remonté
+            context.fill()
+            context.stroke()
+
+            // 4. DESSUS DU CHAPEAU
+            context.fillStyle = '#0f172a'
+            context.beginPath()
+            context.ellipse(
+                px,
+                py - r * 1.4, // Remonté
+                r * 0.75,
+                r * 0.15,
+                0,
+                0,
+                Math.PI * 2
+            )
+            context.fill()
+            context.stroke()
+
+            // 5. RUBAN DU CHAPEAU
+            context.fillStyle = '#dc2626'
+            context.beginPath()
+            context.moveTo(px - r * 0.68, py - r * 0.8) // Remonté
+            context.quadraticCurveTo(px, py - r * 0.6, px + r * 0.68, py - r * 0.8)
+            context.lineTo(px + r * 0.65, py - r * 0.6)
+            context.quadraticCurveTo(px, py - r * 0.4, px - r * 0.65, py - r * 0.6)
+            context.closePath()
+            context.fill()
+
+            // Liseré doré sur le ruban
+            context.strokeStyle = '#fbbf24'
+            context.lineWidth = 1
+            context.beginPath()
+            context.moveTo(px - r * 0.68, py - r * 0.8)
+            context.quadraticCurveTo(px, py - r * 0.6, px + r * 0.68, py - r * 0.8)
+            context.stroke()
+
+            // 6. CARTE À JOUER
+            context.translate(px + r * 0.45, py - r * 0.75) // Remonté
+            context.rotate(Math.PI / 5)
+
+            // Fond de la carte
+            context.fillStyle = '#f8fafc'
+            context.strokeStyle = '#94a3b8'
+            context.lineWidth = 1
+
+            const cardWidth = r * 0.5
+            const cardHeight = r * 0.75
+
+            context.beginPath()
+            context.rect(-cardWidth / 2, -cardHeight / 2 - r * 0.15, cardWidth, cardHeight)
+            context.fill()
+            context.stroke()
+
+            // Motif de la carte (Losange)
+            context.fillStyle = '#dc2626'
+            context.beginPath()
+            context.moveTo(0, -r * 0.35)
+            context.lineTo(r * 0.15, -r * 0.2)
+            context.lineTo(0, -r * 0.05)
+            context.lineTo(-r * 0.15, -r * 0.2)
+            context.closePath()
+            context.fill()
+
+            context.restore()
+        }
+    }
 }

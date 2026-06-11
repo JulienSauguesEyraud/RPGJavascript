@@ -16,6 +16,7 @@ import {
   distance8,
   checkDeadMonsters
 } from '../src/lib/game/index.js'
+import {randomInt} from "node:crypto";
 
 const httpServer = createServer()
 const io = new Server(httpServer, { cors: { origin: '*' } })
@@ -70,19 +71,58 @@ function startRoomLoop(code) {
     for (const id in room.state.entities) {
       const entity = room.state.entities[id]
       if (!entity) continue
-      if (entity.mpRegen || entity.mpRegenInterval) {
+      if (entity.gambler && entity.gamblerInterval && entity.hpRegen && entity.mpRegen) {
+        if (now - entity.lastGambler < entity.gamblerInterval) continue
+        const rand = randomInt(4)
+        if (rand === 0) {
+          if (entity.mp >= entity.maxMp) continue
+          room.state.entities[id].mp = Math.min(entity.maxMp, entity.mp + entity.mpRegen)
+          room.state.entities[id].lastGambler = now
+          room.state.log.push(id + ' gagne ' + entity.mpRegen + ' MP')
+          changed = true
+        }
+        else if (rand === 1) {
+          if (entity.mp <= 0) continue
+          room.state.entities[id].mp = Math.max(0, entity.mp - entity.mpRegen)
+          room.state.entities[id].lastGambler = now
+          room.state.log.push(id+ ' perd ' + entity.mpRegen + ' MP')
+          changed = true
+        }
+        else if (rand === 2) {
+          if (entity.hp >= entity.maxHp) continue
+          room.state.entities[id].hp = Math.min(entity.maxHp, entity.hp + entity.hpRegen)
+          room.state.entities[id].lastGambler = now
+          room.state.log.push(id + ' gagne ' + entity.hpRegen + ' HP')
+          changed = true
+        }
+        else if (rand === 3) {
+          if (entity.hp <= 0) continue
+          room.state.entities[id].hp = Math.max(0, entity.hp - entity.hpRegen)
+          room.state.entities[id].lastGambler = now
+          room.state.log.push(id + ' perd ' + entity.hpRegen + ' HP')
+          if (entity.hp <= 0) {
+            const fresh = createInitialState(room.classes)
+            fresh.lastEventAt = Date.now()
+            room.state = fresh
+          }
+          changed = true
+        }
+      }
+      else if (entity.mpRegen && entity.mpRegenInterval) {
         if (entity.mp >= entity.maxMp) continue
         if (now - entity.lastMpRegen >= entity.mpRegenInterval) {
           room.state.entities[id].mp = Math.min(entity.maxMp, entity.mp + entity.mpRegen)
           room.state.entities[id].lastMpRegen = now
+          room.state.log.push(id + ' gagne ' + entity.mpRegen + ' MP')
           changed = true
         }
       }
-      else if (entity.hpRegen || entity.hpRegenInterval) {
+      else if (entity.hpRegen && entity.hpRegenInterval) {
         if (entity.hp >= entity.maxHp) continue
         if (now - entity.lastHpRegen >= entity.hpRegenInterval) {
           room.state.entities[id].hp = Math.min(entity.maxHp, entity.hp + entity.hpRegen)
           room.state.entities[id].lastHpRegen = now
+          room.state.log.push(id + ' gagne ' + entity.hpRegen + ' HP')
           changed = true
         }
       }

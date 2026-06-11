@@ -1,6 +1,6 @@
 export const MONSTER_TYPES = {
     goblin: {
-        label: 'Goblin',
+        label: 'Gobelin',
         hp: 10,
         maxHp: 10,
         damage: 5,
@@ -27,7 +27,7 @@ export const MONSTER_TYPES = {
         color: '#c0392b',
     },
     demon: {
-        label: 'Demon',
+        label: 'Démon',
         hp: 30,
         maxHp: 30,
         damage: 10,

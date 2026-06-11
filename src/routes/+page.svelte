@@ -14,9 +14,9 @@
   let selectedClass = $state('warrior')
   let joinCode = $state('')
 
-  const unsub    = gameState.subscribe(v => { stateGame = v })
+  const unsub = gameState.subscribe(v => { stateGame = v })
   const unsubSel = selectedAction.subscribe(v => { ui.selected = v })
-  const unsubId  = myPlayerId.subscribe(v => { ui.playerId = v })
+  const unsubId = myPlayerId.subscribe(v => { ui.playerId = v })
 
   onMount(() => {
     const api = initGameCanvas(canvas, () => stateGame, dispatch, ui)
@@ -29,7 +29,7 @@
   <div class="lobby">
     <h1>RPG Tactics</h1>
 
-    {#if $lobbyStatus === 'idle' || $lobbyStatus === 'error'}
+    {#if $lobbyStatus === 'idle' || $lobbyStatus === 'error' || !$roomCode}
 
       <!-- Sélection de classe -->
       <p class="section-title">Choisir une classe</p>
@@ -60,12 +60,15 @@
       </div>
     {/if}
 
-    {#if $lobbyStatus === 'waiting'}
+    {#if $lobbyStatus === 'waiting' && $roomCode}
       <div class="waiting">
         <p>Partie créée !</p>
         <p class="code">{$roomCode}</p>
         <p class="hint">Donne ce code à ton adversaire</p>
         <button onclick={() => navigator.clipboard.writeText($roomCode)}>Copier</button>
+        <button class="leave-btn" onclick={leaveRoom}>
+          Quitter
+        </button>
       </div>
     {/if}
   </div>
