@@ -56,6 +56,5 @@ export function createInitialState(classChoices = {}) {
     activeEvent: null,
     lastEventAt: 0,
     log: ['Début du combat'],
-    seed: Date.now(),
   }
 }

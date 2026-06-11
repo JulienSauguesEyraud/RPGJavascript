@@ -20,7 +20,7 @@ function applyMonsterReward(state, playerId, monsterType) {
     if (def.reward.maxHp > 0) {
         entity.maxHp += def.reward.maxHp
         entity.hp = Math.min(entity.hp + def.reward.maxHp, entity.maxHp)
-        state.log.push(`${playerId} gagne +${def.reward.maxHp} PV max`)
+        state.log.push(`${playerId} gagne +${def.reward.maxHp} HP max`)
     }
     if (def.reward.maxMp > 0) {
         entity.maxMp += def.reward.maxMp
