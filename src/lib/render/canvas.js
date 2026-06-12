@@ -275,10 +275,17 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
       if (!pos) continue
       const { x: px, y: py } = pos
 
-      context.beginPath()
-      context.fillStyle = id === 'player1' ? '#4cf' : '#f66'
-      context.arc(px, py, tileSize * 0.35, 0, Math.PI * 2)
-      context.fill()
+      const PLAYER_COLORS = {
+        player1: '#4cf',
+        player2: '#f66',
+        player3: '#fb2',
+        player4: '#8f8'
+      };
+
+      context.beginPath();
+      context.fillStyle = PLAYER_COLORS[id];
+      context.arc(px, py, tileSize * 0.35, 0, Math.PI * 2);
+      context.fill();
 
       const accessory = CLASSES_VISUAL[entity.className]
       if (accessory) accessory.draw(context, px, py, tileSize)

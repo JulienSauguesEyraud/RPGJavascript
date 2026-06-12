@@ -1,37 +1,53 @@
 <script>
   import { onMount } from 'svelte'
-  import { gameState, dispatch, myPlayerId,
-    roomCode, lobbyStatus, lobbyError,
-    createRoom, joinRoom, leaveRoom } from '../lib/stores/gameState.js'
+  import {
+    gameState, dispatch, myPlayerId,
+    roomCode, lobbyStatus, lobbyError, lobbySlots, winner,
+    createRoom, joinRoom, leaveRoom, startGame
+  } from '../lib/stores/gameState.js'
   import { selectedAction } from '../lib/stores/gameUi.js'
   import { initGameCanvas } from '../lib/render/canvas.js'
   import { CLASSES } from '../lib/game/classes/classes.js'
   import Hud from '../lib/ui/Hud.svelte'
 
-  let canvas
-  let stateGame
-  let ui = { selected: 'move', hover: null, playerId: null }
+  let stateGame = $state(null)
+  let ui = $state({ selected: 'move', hover: null, playerId: null })
   let selectedClass = $state('warrior')
   let joinCode = $state('')
 
-  const unsub = gameState.subscribe(v => { stateGame = v })
-  const unsubSel = selectedAction.subscribe(v => { ui.selected = v })
-  const unsubId = myPlayerId.subscribe(v => { ui.playerId = v })
+  let currentLobbySlots = $derived($lobbySlots)
+  let currentMyPlayerId = $derived($myPlayerId)
+  let currentLobbyStatus = $derived($lobbyStatus)
+  let currentRoomCode = $derived($roomCode)
+  let currentLobbyError = $derived($lobbyError)
 
+  let isHost = $derived((() => {
+    let firstSlot = null
+    for (const key in currentLobbySlots) {
+      if (currentLobbySlots[key] !== null) {
+        firstSlot = key
+        break
+      }
+    }
+    return currentMyPlayerId === firstSlot
+  })())
+
+  gameState.subscribe(v => { stateGame = v })
+  selectedAction.subscribe(v => { ui.selected = v })
+
+  let canvas
   onMount(() => {
     const api = initGameCanvas(canvas, () => stateGame, dispatch, ui)
     requestAnimationFrame(() => api.resize())
-    return () => { api.destroy(); unsub(); unsubSel(); unsubId() }
+    return () => { api.destroy() }
   })
 </script>
 
-{#if $lobbyStatus !== 'playing'}
+{#if currentLobbyStatus !== 'playing'}
   <div class="lobby">
     <h1>RPG Tactics</h1>
 
-    {#if $lobbyStatus === 'idle' || $lobbyStatus === 'error' || !$roomCode}
-
-      <!-- Sélection de classe -->
+    {#if currentLobbyStatus === 'idle' || !currentRoomCode}
       <p class="section-title">Choisir une classe</p>
       <div class="class-cards">
         {#each Object.entries(CLASSES) as [key, cls]}
@@ -56,19 +72,40 @@
           />
           <button onclick={() => joinRoom(joinCode, selectedClass)}>Rejoindre</button>
         </div>
-        {#if $lobbyError}<p class="error">{$lobbyError}</p>{/if}
+        {#if currentLobbyError}<p class="error">{currentLobbyError}</p>{/if}
       </div>
     {/if}
 
-    {#if $lobbyStatus === 'waiting' && $roomCode}
+    {#if currentLobbyStatus === 'waiting' && currentRoomCode}
       <div class="waiting">
-        <p>Partie créée !</p>
-        <p class="code">{$roomCode}</p>
-        <p class="hint">Donne ce code à ton adversaire</p>
-        <button onclick={() => navigator.clipboard.writeText($roomCode)}>Copier</button>
-        <button class="leave-btn" onclick={leaveRoom}>
-          Quitter
-        </button>
+        {#if $winner}
+          <div class="victory-banner">
+            <h2>Partie terminée ! {$winner} a gagné !</h2>
+          </div>
+        {/if}
+
+        <p>Partie : <span class="code">{currentRoomCode}</span></p>
+
+        <div class="slots-list">
+          <p>Joueurs en attente :</p>
+          <ul>
+            <li>Slot 1: {currentLobbySlots.player1 ? 'Occupé' : 'Vide'}</li>
+            <li>Slot 2: {currentLobbySlots.player2 ? 'Occupé' : 'Vide'}</li>
+            <li>Slot 3: {currentLobbySlots.player3 ? 'Occupé' : 'Vide'}</li>
+            <li>Slot 4: {currentLobbySlots.player4 ? 'Occupé' : 'Vide'}</li>
+          </ul>
+        </div>
+
+        {#if isHost}
+          <button class="start-btn" onclick={startGame}>Lancer la partie</button>
+        {:else}
+          <p class="hint">En attente du joueur prioritaire...</p>
+        {/if}
+
+        <button onclick={() => navigator.clipboard.writeText(currentRoomCode)}>Copier le code</button>
+        <button class="leave-btn" onclick={leaveRoom}>Quitter</button>
+
+        {#if currentLobbyError}<p class="error">{currentLobbyError}</p>{/if}
       </div>
     {/if}
   </div>
@@ -158,6 +195,10 @@
     flex-direction: column;
     align-items: center;
   }
+
+  .start-btn { margin: 10px 0; }
+
+  .victory-banner { color: gold; }
 
   .code {
     font-size: 3rem;

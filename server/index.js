@@ -4,7 +4,7 @@ import { Server } from 'socket.io'
 import {
   handleAction,
   handleCreate, handleJoin,
-  handleLeave, handleReset,
+  handleLeave, handleReset, handleStart,
 
 } from './SocketHandlers.js'
 
@@ -13,6 +13,7 @@ const io = new Server(httpServer, { cors: { origin: '*' } })
 
 io.on('connection', (socket) => {
   socket.on('create', (className) => handleCreate(socket, className))
+  socket.on('start', () => handleStart(io, socket))
   socket.on('join', ({ code, className }) => handleJoin(io, socket, code, className))
   socket.on('action', (action) => handleAction(io, socket, action))
   socket.on('reset', () => handleReset(io,socket))

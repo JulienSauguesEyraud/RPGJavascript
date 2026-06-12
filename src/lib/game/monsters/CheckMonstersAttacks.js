@@ -1,35 +1,42 @@
-import {createInitialState, distanceFromPlayer, MONSTER_TYPES} from "../index.js";
+import {distanceFromPlayer, MONSTER_TYPES} from "../index.js";
+import {checkVictory} from "../globalUtils.js";
 
-export function checkMonstersAttacks(room, now) {
+export function checkMonstersAttacks(room, io, now, code) {
     let changed = false
     for (const monster of room.state.monsters ?? []) {
         const def = MONSTER_TYPES[monster.type]
-        if (!def) return false;
-        for (const playerId of ['player1', 'player2']) {
-            const player = room.state.entities[playerId]
-            if (!player) return false
+        if (!def) continue;
+
+        for (const id in room.state.entities) {
+            if (!id.startsWith('player')) continue;
+
+            const player = room.state.entities[id]
+            if (!player) continue
 
             if (distanceFromPlayer(player, monster) === 1) {
-                if (!monster.adjacentSince[playerId]) {
-                    monster.adjacentSince[playerId] = now
+                if (!monster.adjacentSince[id]) {
+                    monster.adjacentSince[id] = now
                 }
-                if (now - monster.adjacentSince[playerId] >= def.attackDelay) {
-                    room.state.entities[playerId].hp -= def.damage
-                    monster.adjacentSince[playerId] = now
+
+                if (now - monster.adjacentSince[id] >= def.attackDelay) {
+                    player.hp -= def.damage
+                    monster.adjacentSince[id] = now
                     monster.lastAttack = now
-                    room.state.log.push(`${monster.type} attaque ${playerId} pour ${def.damage} dégâts`)
+                    room.state.log.push(`${monster.type} attaque ${id} pour ${def.damage} dégâts`)
                     changed = true
 
-                    if (room.state.entities[playerId].hp <= 0) {
-                        const fresh = createInitialState(room.classes)
-                        fresh.lastEventAt = now
-                        room.state = fresh
+                    if (player.hp <= 0) {
+                        room.state.log.push(`${id} est mort !`)
+                        delete room.state.entities[id]
                         changed = true
-                        break
+
+                        if (checkVictory(io, room, code)) {
+                            return true
+                        }
                     }
                 }
             } else {
-                monster.adjacentSince[playerId] = 0
+                monster.adjacentSince[id] = 0
             }
         }
     }

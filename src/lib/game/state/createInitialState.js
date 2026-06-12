@@ -1,4 +1,4 @@
-import {createMonsters, createTileEffects} from '../index.js'
+import { createMonsters, createTileEffects } from '../index.js'
 import { CLASSES } from '../classes/classes.js'
 
 export function createInitialState(classChoices = {}) {
@@ -34,27 +34,35 @@ export function createInitialState(classChoices = {}) {
     }
   }
 
-  const player1 = makeEntity('player1', 1, 1, classChoices.player1 ?? 'warrior')
-  const player2 = makeEntity('player2', 6, 4, classChoices.player2 ?? 'warrior')
+  const startPositions = {
+    player1: { x: 1, y: 1 },
+    player2: { x: 6, y: 1 },
+    player3: { x: 1, y: 4 },
+    player4: { x: 6, y: 4 },
+  }
 
-  const monsters = createMonsters({
-    width,
-    height,
-    blockedPositions: [player1, player2],
-  })
+  const entities = {}
+  for (const id in classChoices) {
+    const className = classChoices[id]
+    if (className !== null) {
+      const pos = startPositions[id]
+      entities[id] = makeEntity(id, pos.x, pos.y, className)
+    }
+  }
+
+  const playerList = []
+  for (const id in entities) {
+    playerList.push(entities[id])
+  }
+
+  const monsters = createMonsters({ width, height, blockedPositions: playerList })
 
   return {
-    width,
-    height,
-    entities: { player1, player2 },
-    monsters,
+    width, height, entities, monsters,
     tileEffects: createTileEffects({
-      width,
-      height,
-      blockedPositions: [player1, player2, ...monsters],
+      width, height,
+      blockedPositions: [...monsters]
     }),
-    activeEvent: null,
-    lastEventAt: 0,
-    log: ['Début du combat'],
+    activeEvent: null, lastEventAt: 0, log: ['Début du combat']
   }
 }

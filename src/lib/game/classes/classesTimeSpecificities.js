@@ -1,11 +1,11 @@
-import {createInitialState} from "../index.js";
+import {checkVictory} from "../globalUtils.js";
 
-export function checkClassesTimeSpecificities(room, now) {
+export function checkClassesTimeSpecificities(room, io, now, code) {
     let changed = false
     for (const id in room.state.entities) {
         const entity = room.state.entities[id]
         if (!entity) continue
-        if(gamblerApplyEffect(room, now, entity, id)) {
+        if(gamblerApplyEffect(room, io, now, entity, id, code)) {
             changed = true
             continue
         }
@@ -45,7 +45,7 @@ function priestRegenHp(room, now, entity, id) {
     return false
 }
 
-function gamblerApplyEffect(room, now, entity, id) {
+function gamblerApplyEffect(room, io, now, entity, id, code) {
     if (entity.gambler && entity.gamblerInterval && entity.hpRegen && entity.mpRegen) {
         if (now - entity.lastGambler < entity.gamblerInterval) return false
         const rand = Math.floor(Math.random() * 4)
@@ -59,7 +59,7 @@ function gamblerApplyEffect(room, now, entity, id) {
             return gamblerRegenHp(room, now, entity, id)
         }
         else if (rand === 3) {
-            return gamblerLoseHp(room, now, entity, id)
+            return gamblerLoseHp(room, io, now, entity, id, code)
         }
     }
     return false
@@ -89,15 +89,16 @@ function gamblerRegenHp(room, now, entity, id) {
     return true
 }
 
-function gamblerLoseHp(room, now, entity, id) {
+function gamblerLoseHp(room, io, now, entity, id, code) {
     if (entity.hp <= 0) return false
     room.state.entities[id].hp = Math.max(0, entity.hp - entity.hpRegen)
     room.state.entities[id].lastGambler = now
     room.state.log.push(id + ' perd ' + entity.hpRegen + ' HP')
-    if (entity.hp <= 0) {
-        const fresh = createInitialState(room.classes)
-        fresh.lastEventAt = Date.now()
-        room.state = fresh
+    if (room.state.entities[id].hp <= 0) {
+        room.state.log.push(`${id} est mort de malchance !`)
+        delete room.state.entities[id]
+
+        checkVictory(io, room, code)
     }
     return true
 }

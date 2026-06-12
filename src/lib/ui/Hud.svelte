@@ -1,5 +1,5 @@
 <script>
-  import { gameState, myPlayerId } from '../stores/gameState.js'
+  import { gameState, myPlayerId, getPlayersList } from '../stores/gameState.js'
   import { selectedAction } from '../stores/gameUi.js'
 
   const COOLDOWN_MOVE = $derived(me?.cooldownMove ?? 3000)
@@ -11,11 +11,10 @@
   setInterval(() => { now = Date.now() }, 100)
 
   const me = $derived($gameState?.entities?.[$myPlayerId])
-  const p1 = $derived($gameState?.entities?.player1)
-  const p2 = $derived($gameState?.entities?.player2)
   const activeEvent = $derived($gameState?.activeEvent)
   const lastEventAt = $derived($gameState?.lastEventAt ?? 0)
   const gameLogs = $derived($gameState?.log ?? [])
+  const players = $derived(getPlayersList($gameState))
 
   function cooldownMove() {
     if (!me) return 0
@@ -44,16 +43,14 @@
 
 <div class="hud">
   <div class="stats">
-    <div>
-      <strong>Joueur 1</strong> [{p1?.className ?? ''}]
-      HP: {p1?.hp}/{p1?.maxHp}
-      MP: {p1?.mp}/{p1?.maxMp}
-    </div>
-    <div>
-      <strong>Joueur 2</strong> [{p2?.className ?? ''}]
-      HP: {p2?.hp}/{p2?.maxHp}
-      MP: {p2?.mp}/{p2?.maxMp}
-    </div>
+    {#each players as player}
+      <div class:is-me={player.id === $myPlayerId}>
+        <strong>{player.id}</strong>
+        [{player.className}]
+        HP: {player.hp}/{player.maxHp}
+        MP: {player.mp}/{player.maxMp}
+      </div>
+    {/each}
     <div class="event-zone">
       {#if activeEvent}
         <span class="event-active">{activeEvent.type} — {(timeLeftEvent() / 1000).toFixed(1)}s</span>

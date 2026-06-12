@@ -13,6 +13,26 @@ function sendToPlayer(room, io, playerId, state) {
     if (socketId) io.to(socketId).emit('state', state)
 }
 
+function checkAttackCooldown(next, entity, playerId, now, room, io) {
+    if (now - entity.lastAttacked < (entity.cooldownAttack ?? 5000)) {
+        next.log.push('Attaque en recharge')
+        sendToPlayer(room, io, playerId, next)
+        return false
+    }
+    return true
+}
+
+function handleAttackResult(next, playerId, now, actionType) {
+    if (next.entities[playerId].doubleAttack) {
+        next.entities[playerId].doubleAttack = false
+    } else {
+        next.entities[playerId].lastAttacked = now
+    }
+    next.entities[playerId].lastAction = actionType
+    checkDeadMonsters(next, playerId)
+    return next
+}
+
 export const ACTION_HANDLERS = {
     'MOVE': ({ next, entity, action, playerId, now, room, io }) =>
         moveAction(next, entity, action, playerId, now, room, io),
@@ -50,96 +70,44 @@ function moveAction(next, entity, action, playerId, now, room, io) {
 
 function meleeAction(next, entity, action, playerId, now, room, io) {
     const { targetId } = action.payload
-    const cooldownAttack = entity.cooldownAttack ?? 5000
-
-    if (now - entity.lastAttacked < cooldownAttack) {
-        next.log.push('Attaque en recharge')
-        sendToPlayer(room, io, playerId, next)
-        return
-    }
+    if (!checkAttackCooldown(next, entity, playerId, now, room, io)) return
     if (!canMelee(next, playerId, targetId)) {
         sendToPlayer(room, io, playerId, next)
         return
     }
     next = applyMelee(next, playerId, targetId)
-    if (next.entities[playerId].doubleAttack) {
-        next.entities[playerId].doubleAttack = false
-    } else {
-        next.entities[playerId].lastAttacked = now
-    }
-    next.entities[playerId].lastAction = 'melee'
-    checkDeadMonsters(next, playerId)
-    return next
+    return handleAttackResult(next, playerId, now, 'melee')
 }
 
 function fireballAction(next, entity, action, playerId, now, room, io) {
     const { targetId } = action.payload
-    const cooldownAttack = entity.cooldownAttack ?? 5000
-
-    if (now - entity.lastAttacked < cooldownAttack) {
-        next.log.push('Attaque en recharge')
-        sendToPlayer(room, io, playerId, next)
-        return
-    }
+    if (!checkAttackCooldown(next, entity, playerId, now, room, io)) return
     if (!canFireball(next, playerId, targetId)) {
         sendToPlayer(room, io, playerId, next)
         return
     }
     next = applyFireball(next, playerId, targetId)
-    if (next.entities[playerId].doubleAttack) {
-        next.entities[playerId].doubleAttack = false
-    } else {
-        next.entities[playerId].lastAttacked = now
-    }
-    next.entities[playerId].lastAction = 'fireball'
-    checkDeadMonsters(next, playerId)
-    return next
+    return handleAttackResult(next, playerId, now, 'fireball')
 }
 
 function thunderAction(next, entity, action, playerId, now, room, io) {
     const { targetId } = action.payload
-    const cooldownAttack = entity.cooldownAttack ?? 5000
-
-    if (now - entity.lastAttacked < cooldownAttack) {
-        next.log.push('Attaque en recharge')
-        sendToPlayer(room, io, playerId, next)
-        return
-    }
+    if (!checkAttackCooldown(next, entity, playerId, now, room, io)) return
     if (!canThunder(next, playerId, targetId)) {
         sendToPlayer(room, io, playerId, next)
         return
     }
     next = applyThunder(next, playerId, targetId)
-    if (next.entities[playerId].doubleAttack) {
-        next.entities[playerId].doubleAttack = false
-    } else {
-        next.entities[playerId].lastAttacked = now
-    }
-    next.entities[playerId].lastAction = 'thunder'
-    checkDeadMonsters(next, playerId)
-    return next
+    return handleAttackResult(next, playerId, now, 'thunder')
 }
 
 function teleportAction(next, entity, action, playerId, now, room, io) {
     const { to } = action.payload
-    const cooldownAttack = entity.cooldownAttack ?? 5000
-
-    if (now - entity.lastAttacked < cooldownAttack) {
-        next.log.push('Attaque en recharge')
-        sendToPlayer(room, io, playerId, next)
-        return
-    }
+    if (!checkAttackCooldown(next, entity, playerId, now, room, io)) return
     if (!canTeleport(next, playerId, to)) {
         sendToPlayer(room, io, playerId, next)
         return
     }
     next = applyTeleport(next, playerId, to)
-    if (next.entities[playerId].doubleAttack) {
-        next.entities[playerId].doubleAttack = false
-    } else {
-        next.entities[playerId].lastAttacked = now
-    }
-    next.entities[playerId].lastAction = 'teleport'
-    next = resolveTileTrigger(next, playerId, TILE_EFFECT_TRIGGERS.ON_ENTER)
-    return next
+    return handleAttackResult(next, playerId, now, 'teleport')
 }
