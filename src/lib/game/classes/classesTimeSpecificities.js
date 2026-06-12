@@ -1,11 +1,11 @@
-import {checkVictory} from "../globalUtils.js";
+import { checkVictory } from "../globalUtils.js"
 
 export function checkClassesTimeSpecificities(room, io, now, code) {
     let changed = false
     for (const id in room.state.entities) {
         const entity = room.state.entities[id]
         if (!entity) continue
-        if(gamblerApplyEffect(room, io, now, entity, id, code)) {
+        if (gamblerApplyEffect(room, io, now, entity, id, code)) {
             changed = true
             continue
         }
@@ -19,6 +19,7 @@ export function checkClassesTimeSpecificities(room, io, now, code) {
     }
     return changed
 }
+
 function mageRegenMp(room, now, entity, id) {
     if (entity.mpRegen && entity.mpRegenInterval) {
         if (entity.mp >= entity.maxMp) return false
@@ -77,7 +78,7 @@ function gamblerLoseMp(room, now, entity, id) {
     if (entity.mp <= 0) return false
     room.state.entities[id].mp = Math.max(0, entity.mp - entity.mpRegen)
     room.state.entities[id].lastGambler = now
-    room.state.log.push(id+ ' perd ' + entity.mpRegen + ' MP')
+    room.state.log.push(id + ' perd ' + entity.mpRegen + ' MP')
     return true
 }
 
@@ -94,10 +95,10 @@ function gamblerLoseHp(room, io, now, entity, id, code) {
     room.state.entities[id].hp = Math.max(0, entity.hp - entity.hpRegen)
     room.state.entities[id].lastGambler = now
     room.state.log.push(id + ' perd ' + entity.hpRegen + ' HP')
+
     if (room.state.entities[id].hp <= 0) {
         room.state.log.push(`${id} est mort de malchance !`)
         delete room.state.entities[id]
-
         checkVictory(io, room, code)
     }
     return true

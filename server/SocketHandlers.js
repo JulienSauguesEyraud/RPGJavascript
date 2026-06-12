@@ -87,10 +87,10 @@ export function handleStart(io, socket) {
     }
 
     if (socket.id !== room.slots[hostSlot]) {
-        return socket.emit('error', 'Seul le premier joueur de la salle peut lancer')
+        return socket.emit('error', 'Seul le premier joueur de la salle peut lancer la partie')
     }
 
-    let activePlayers = 0
+    let activePlayers = 0 
     for (const key in room.slots) {
         if (room.slots[key] !== null) activePlayers++
     }
