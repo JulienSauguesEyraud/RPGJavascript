@@ -244,7 +244,7 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
 
         if (me && currentSelectedAction && maxRange > 0) {
           if ((me.x !== x || me.y !== y) && distanceFromTile(me, { x, y }) <= maxRange) {
-            context.fillStyle = 'rgba(0, 162, 255, 0.15)'
+            context.fillStyle = 'rgb(0 162 255 / 0.05)'
             context.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1)
           }
         }
