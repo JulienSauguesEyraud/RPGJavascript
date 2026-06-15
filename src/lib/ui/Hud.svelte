@@ -1,6 +1,12 @@
 <script>
   import { gameState, myPlayerId, getPlayersList } from '../stores/gameState.js'
   import { selectedAction } from '../stores/gameUi.js'
+  import NoManaIcon from './NoManaIcon.svelte' // Import de l'icône
+
+  // Coûts en MP des compétences magiques
+  const MP_FIREBALL = 4
+  const MP_THUNDER = 10
+  const MP_TELEPORT = 5
 
   const COOLDOWN_MOVE = $derived(me?.cooldownMove ?? 3000)
   const COOLDOWN_ATTACK = $derived(me?.cooldownAttack ?? 5000)
@@ -94,7 +100,7 @@
     <div class="action-btn">
       <button
               class:active={$selectedAction === 'move'}
-              disabled={cooldownMove() > 0}
+              disabled={cooldownMove() > 0 || !me }
               onclick={() => choose('move')}
       >Déplacer</button>
       <div class="bar">
@@ -106,7 +112,7 @@
     <div class="action-btn">
       <button
               class:active={$selectedAction === 'melee'}
-              disabled={cooldownAttack() > 0}
+              disabled={cooldownAttack() > 0 || !me }
               onclick={() => choose('melee')}
       >Corps à corps</button>
       <p>(MP:0/Portée:1)</p>
@@ -118,24 +124,47 @@
 
     <div class="action-btn">
       <div class="magicAttacks">
-        <button
-                class:active={$selectedAction === 'fireball'}
-                disabled={cooldownAttack() > 0}
-                onclick={() => choose('fireball')}
-        >Boule de feu</button>
-        <p>(MP:4/Portée:2)</p>
-        <button
-                class:active={$selectedAction === 'thunder'}
-                disabled={cooldownAttack() > 0}
-                onclick={() => choose('thunder')}
-        >Tonnerre</button>
-        <p>(MP:10/Portée:∞)</p>
-        <button
-                class:active={$selectedAction === 'teleport'}
-                disabled={cooldownAttack() > 0}
-                onclick={() => choose('teleport')}
-        >Téléportation</button>
-        <p>(MP:5/Portée:∞)</p>
+        <div class="btn-wrapper">
+          <button
+                  class:active={$selectedAction === 'fireball'}
+                  disabled={cooldownAttack() > 0 || !me || (me?.mp ?? 0) < MP_FIREBALL}
+                  onclick={() => choose('fireball')}
+          >
+            Boule de feu
+          </button>
+          {#if me && me.mp < MP_FIREBALL}
+            <NoManaIcon />
+          {/if}
+        </div>
+        <p>(MP:{MP_FIREBALL}/Portée:2)</p>
+
+        <div class="btn-wrapper">
+          <button
+                  class:active={$selectedAction === 'thunder'}
+                  disabled={cooldownAttack() > 0|| !me || (me?.mp ?? 0) < MP_THUNDER}
+                  onclick={() => choose('thunder')}
+          >
+            Tonnerre
+          </button>
+          {#if me && me.mp < MP_THUNDER}
+            <NoManaIcon />
+          {/if}
+        </div>
+        <p>(MP:{MP_THUNDER}/Portée:∞)</p>
+
+        <div class="btn-wrapper">
+          <button
+                  class:active={$selectedAction === 'teleport'}
+                  disabled={cooldownAttack() > 0 || !me || (me?.mp ?? 0) < MP_TELEPORT}
+                  onclick={() => choose('teleport')}
+          >
+            Téléportation
+          </button>
+          {#if me && me.mp < MP_TELEPORT}
+            <NoManaIcon />
+          {/if}
+        </div>
+        <p>(MP:{MP_TELEPORT}/Portée:∞)</p>
       </div>
       <div class="bar">
         <div class="bar-fill attack" style="width:{(cooldownAttack()/COOLDOWN_ATTACK)*100}%"></div>
@@ -278,6 +307,11 @@
     align-items: center;
     width: 100%;
     gap: 8px;
+  }
+
+  .btn-wrapper {
+    position: relative;
+    width: 100%;
   }
 
   .actions button {
