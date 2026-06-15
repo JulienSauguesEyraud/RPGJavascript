@@ -3,6 +3,22 @@ import { selectedAction } from '../stores/gameUi.js'
 import { ATTACKS_VISUAL, MONSTERS_VISUAL, CLASSES_VISUAL } from './index.js'
 import { distanceFromTile } from "../game/index.js";
 
+function drawSpinner(ctx, x, y, radius, pct, color) {
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+  ctx.fill();
+
+  if (pct > 0) {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.arc(x, y, radius, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * pct));
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+}
+
 export function initGameCanvas(canvas, getState, dispatch, uiStores) {
   const context = canvas.getContext('2d')
   let tileSize = 64
@@ -184,7 +200,6 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
   const unsubPlayerId = myPlayerId.subscribe(val => {
     currentPlayerId = val
   })
-  // -------------------------------------
 
   function getDisplayPos(id, entity, now) {
     const teleportEffect = effects.find(e => e.kind === 'teleport' && e.entityId === id);
@@ -344,6 +359,23 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
       context.font = `${Math.floor(tileSize * 0.18)}px sans-serif`
       context.fillText(`${entity.hp}/${entity.maxHp}`, px, py - 4)
       context.fillText(`MP:${entity.mp}`, px, py + tileSize * 0.22)
+
+      const nowForCooldown = Date.now()
+
+      const maxMoveCooldown = entity.cooldownMove ?? 3000
+      const elapsedMove = nowForCooldown - (entity.lastMoved ?? 0)
+      const movePct = Math.min(1, elapsedMove / maxMoveCooldown)
+
+      const maxAttackCooldown = entity.cooldownAttack ?? 5000
+      const elapsedAttack = nowForCooldown - (entity.lastAttacked ?? 0)
+      const attackPct = Math.min(1, elapsedAttack / maxAttackCooldown)
+
+      const spinnerRadius = tileSize * 0.12
+      const offsetX = tileSize * 0.37
+      const offsetY = tileSize * 0.35
+
+      drawSpinner(context, px - offsetX, py + offsetY, spinnerRadius, movePct, '#296f21')
+      drawSpinner(context, px + offsetX, py + offsetY, spinnerRadius, attackPct, '#8c20cc')
     }
 
     for (const effect of effects) {
