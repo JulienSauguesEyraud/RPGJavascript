@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-60 -40 120 80" width="120" height="80">
+  <defs>
+    <filter id="fire-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="0" stdDeviation="15" flood-color="#ea580c" />
+    </filter>
+  </defs>
+  <g filter="url(#fire-glow)">
+    <path d="M 10,0 L -50,-20 Q -20,0 -50,20 Z" fill="#ef4444" />
+    <circle cx="0" cy="0" r="18" fill="#f97316" />
+  </g>
+  <circle cx="6" cy="0" r="10" fill="#fef08a" />
+</svg>

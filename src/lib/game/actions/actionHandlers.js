@@ -6,7 +6,7 @@ import {
     canMove, canTeleport, canThunder, checkDeadMonsters,
     resolveTileTrigger,
     TILE_EFFECT_TRIGGERS
-} from "../src/lib/game/index.js";
+} from "../index.js";
 
 function sendToPlayer(room, io, playerId, state) {
     const socketId = room.slots[playerId]

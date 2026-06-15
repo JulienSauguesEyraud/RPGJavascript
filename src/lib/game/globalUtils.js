@@ -1,4 +1,4 @@
-export function distanceFromPlayer(a, b) {
+export function distanceFromTile(a, b) {
   return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y))
 }
 

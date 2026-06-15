@@ -1,4 +1,4 @@
-import {distanceFromPlayer, MONSTER_TYPES} from "../index.js";
+import {distanceFromTile, MONSTER_TYPES} from "../index.js";
 import {checkVictory} from "../globalUtils.js";
 
 export function checkMonstersAttacks(room, io, now, code) {
@@ -13,7 +13,7 @@ export function checkMonstersAttacks(room, io, now, code) {
             const player = room.state.entities[id]
             if (!player) continue
 
-            if (distanceFromPlayer(player, monster) === 1) {
+            if (distanceFromTile(player, monster) === 1) {
                 if (!monster.adjacentSince[id]) {
                     monster.adjacentSince[id] = now
                 }

@@ -6,9 +6,9 @@
     createRoom, joinRoom, leaveRoom, startGame
   } from '../lib/stores/gameState.js'
   import { selectedAction } from '../lib/stores/gameUi.js'
-  import { initGameCanvas } from '../lib/render/canvas.js'
   import { CLASSES } from '../lib/game/classes/classes.js'
   import Hud from '../lib/ui/Hud.svelte'
+  import { initGameCanvas, loadImages, MONSTERS_VISUAL, CLASSES_VISUAL, ATTACKS_VISUAL } from "../lib/render/index.js";
 
   let stateGame = $state(null)
   let ui = $state({ selected: 'move', hover: null, playerId: null })
@@ -36,7 +36,13 @@
   selectedAction.subscribe(v => { ui.selected = v })
 
   let canvas
-  onMount(() => {
+  onMount(async () => {
+    await Promise.all([
+      loadImages(MONSTERS_VISUAL),
+      loadImages(CLASSES_VISUAL),
+      loadImages(ATTACKS_VISUAL)
+    ]);
+
     const api = initGameCanvas(canvas, () => stateGame, dispatch, ui)
     requestAnimationFrame(() => api.resize())
     return () => { api.destroy() }

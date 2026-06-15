@@ -1,6 +1,6 @@
 import { gameState } from '../stores/gameState.js'
 import { ATTACKS_VISUAL, MONSTERS_VISUAL, CLASSES_VISUAL } from './index.js'
-import {distanceFromPlayer} from "../game/index.js";
+import {distanceFromTile} from "../game/index.js";
 
 export function initGameCanvas(canvas, getState, dispatch, uiStores) {
   const context = canvas.getContext('2d')
@@ -124,7 +124,7 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
             }) ?? []
 
             for (const attackingMonster of attackingMonsters) {
-              if (distanceFromPlayer(attackingMonster, curr) === 1) {
+              if (distanceFromTile(attackingMonster, curr) === 1) {
                 const kind = MONSTER_ATTACK_KIND[attackingMonster.type] ?? 'melee'
                 pushAttackEffect(
                     kind,
@@ -252,12 +252,19 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
       if (!visual) continue
       const px = monster.x * tileSize + tileSize / 2
       const py = monster.y * tileSize + tileSize / 2
-      const r  = tileSize * 0.3
+      const size = tileSize * visual.scale;
 
-      context.save()
-      visual.draw(context, px, py, r, tileSize)
-      context.restore()
+      if (visual.image) {
+        context.drawImage(
+            visual.image,
+            px - size / 2,
+            py - size / 2,
+            size,
+            size
+        );
+      }
 
+      const r = tileSize * 0.3;
       context.fillStyle = '#fff'
       context.textAlign = 'center'
       context.font = `${Math.floor(tileSize * 0.14)}px sans-serif`
@@ -288,8 +295,18 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
       context.fill();
 
       const accessory = CLASSES_VISUAL[entity.className]
-      if (accessory) accessory.draw(context, px, py, tileSize)
+      if (accessory?.image) {
+        const offX = accessory.offsetX ?? 0;
+        const offY = accessory.offsetY ?? 0;
 
+        context.drawImage(
+            accessory.image,
+            px - tileSize / 2 + offX,
+            py - tileSize / 2 + offY,
+            tileSize,
+            tileSize
+        );
+      }
       context.fillStyle = '#fff'
       context.textAlign = 'center'
       context.font = `${Math.floor(tileSize * 0.18)}px sans-serif`
@@ -299,10 +316,83 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
 
     for (const effect of effects) {
       if (effect.kind === 'move' || effect.kind === 'tile' || now < effect.start) continue
+
       const visual = ATTACKS_VISUAL[effect.kind]
-      if (!visual) continue
-      const t = (now - effect.start) / effect.duration
-      visual.draw(context, effect, t, tileSize)
+      if (!visual?.image) continue
+
+      const t = Math.min((now - effect.start) / effect.duration, 1)
+
+      if (effect.kind === 'melee' || effect.kind === 'fireball') {
+        const x = effect.from.x + (effect.to.x - effect.from.x) * t
+        const y = effect.from.y + (effect.to.y - effect.from.y) * t
+        const angle = Math.atan2(effect.to.y - effect.from.y, effect.to.x - effect.from.x)
+
+        context.save()
+        context.translate(x, y)
+        context.rotate(angle)
+
+        if (effect.kind === 'melee') {
+          context.globalAlpha = 1 - t
+        }
+
+        context.drawImage(visual.image, -tileSize / 2, -tileSize / 2, tileSize, tileSize)
+        context.restore()
+      }
+
+      else if (effect.kind === 'thunder') {
+        const startX = effect.to.x
+        const startY = effect.to.y - tileSize * 1.5
+        const endY = effect.to.y
+
+        const totalHeight = endY - startY
+
+        const currentHeight = totalHeight * Math.min(t * 2, 1)
+        const alpha = 1 - (t * t)
+
+        context.save()
+        context.globalAlpha = alpha
+
+        if (currentHeight > 0) {
+          context.drawImage(
+              visual.image,
+              startX - tileSize / 2,
+              startY,
+              tileSize,
+              currentHeight
+          )
+        }
+
+        if (t > 0.3) {
+          context.fillStyle = '#ffffff'
+          context.beginPath()
+          context.ellipse(effect.to.x, effect.to.y, tileSize * 0.4 * alpha, tileSize * 0.15 * alpha, 0, 0, Math.PI * 2)
+          context.fill()
+        }
+        context.restore()
+      }
+      else if (effect.kind === 'teleport') {
+        const fadeOut = Math.max(0, 1 - t * 2)
+        const fadeIn  = Math.max(0, t * 2 - 1)
+        const rotation = t * Math.PI * 4
+
+        if (fadeOut > 0) {
+          context.save()
+          context.translate(effect.from.x, effect.from.y)
+          context.rotate(rotation)
+          context.globalAlpha = fadeOut
+          context.drawImage(visual.image, -tileSize / 2, -tileSize / 2, tileSize, tileSize)
+          context.restore()
+        }
+
+        if (fadeIn > 0) {
+          context.save()
+          context.translate(effect.to.x, effect.to.y)
+          context.rotate(rotation)
+          context.globalAlpha = fadeIn
+          context.drawImage(visual.image, -tileSize / 2, -tileSize / 2, tileSize, tileSize)
+          context.restore()
+        }
+      }
     }
   }
 

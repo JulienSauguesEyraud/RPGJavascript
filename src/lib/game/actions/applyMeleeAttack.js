@@ -1,4 +1,4 @@
-import { distanceFromPlayer } from '../index.js'
+import { distanceFromTile } from '../index.js'
 
 export function canMelee(state, attackerId, targetId) {
   const attacker = state.entities[attackerId]
@@ -14,7 +14,7 @@ export function canMelee(state, attackerId, targetId) {
 
   const target = state.entities[targetId]
   if (target) {
-    if (distanceFromPlayer(attacker, target) !== 1) {
+    if (distanceFromTile(attacker, target) !== 1) {
       state.log.push('Cible hors de portée');
       return false
     }
@@ -23,7 +23,7 @@ export function canMelee(state, attackerId, targetId) {
 
   const monster = state.monsters?.find(m => m.id === targetId)
   if (monster) {
-    if (distanceFromPlayer(attacker, monster) !== 1) {
+    if (distanceFromTile(attacker, monster) !== 1) {
       state.log.push('Cible hors de portée');
       return false
     }

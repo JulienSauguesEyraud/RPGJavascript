@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -40 70 80" width="70" height="80">
+  <g transform="translate(28, 0)">
+    <path d="M 0,-26.25 Q 19.25,-19.25 15.75,0 Q 14,21 0,31.5 Q -14,21 -15.75,0 Q -19.25,-19.25 0,-26.25 Z" fill="#475569" stroke="#cbd5e1" stroke-width="1.5" />
+    <path d="M 0,-19.25 Q 12.25,-12.25 9.8,0 Q 8.75,12.25 0,21 Q -8.75,12.25 -9.8,0 Q -12.25,-12.25 0,-19.25 Z" fill="none" stroke="#94a3b8" stroke-width="1" />
+    <path d="M 0,-14 L 0,14 M -8.75,0 L 8.75,0" fill="none" stroke="#e2e8f0" stroke-width="2" />
+  </g>
+</svg>

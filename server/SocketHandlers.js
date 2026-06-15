@@ -4,7 +4,7 @@ import {
     checkMonstersAttacks,
     createInitialState,
 } from "../src/lib/game/index.js";
-import {ACTION_HANDLERS} from "./actionHandlers.js";
+import {ACTION_HANDLERS} from "../src/lib/game/actions/actionHandlers.js";
 import {checkVictory} from "../src/lib/game/globalUtils.js";
 
 const rooms = {}

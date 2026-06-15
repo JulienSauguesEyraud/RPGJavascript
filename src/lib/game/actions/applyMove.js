@@ -1,4 +1,4 @@
-import { distanceFromPlayer } from '../index.js'
+import { distanceFromTile } from '../index.js'
 
 export function canMove(state, id, to) {
   const actor = state.entities[id]
@@ -22,7 +22,7 @@ export function canMove(state, id, to) {
       return false
     }
   }
-  if (distanceFromPlayer(actor, to) !== 1) {
+  if (distanceFromTile(actor, to) !== 1) {
     state.log.push('Case hors de portée')
     return false
   }
