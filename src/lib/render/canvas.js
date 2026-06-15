@@ -1,6 +1,7 @@
-import { gameState } from '../stores/gameState.js'
+import { gameState, myPlayerId } from '../stores/gameState.js'
+import { selectedAction } from '../stores/gameUi.js'
 import { ATTACKS_VISUAL, MONSTERS_VISUAL, CLASSES_VISUAL } from './index.js'
-import {distanceFromTile} from "../game/index.js";
+import { distanceFromTile } from "../game/index.js";
 
 export function initGameCanvas(canvas, getState, dispatch, uiStores) {
   const context = canvas.getContext('2d')
@@ -11,6 +12,9 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
 
   const effects = []
   let prevState = null
+
+  let currentSelectedAction = ''
+  let currentPlayerId = ''
 
   const observer = new ResizeObserver(() => resize())
   observer.observe(canvas.parentElement)
@@ -43,7 +47,7 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
     })
   }
 
-  const unsub = gameState.subscribe(state => {
+  const unsubState = gameState.subscribe(state => {
     if (!state) return
 
     if (prevState) {
@@ -172,6 +176,16 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
 
     prevState = state
   })
+
+  const unsubSelected = selectedAction.subscribe(val => {
+    currentSelectedAction = val
+  })
+
+  const unsubPlayerId = myPlayerId.subscribe(val => {
+    currentPlayerId = val
+  })
+  // -------------------------------------
+
   function getDisplayPos(id, entity, now) {
     const teleportEffect = effects.find(e => e.kind === 'teleport' && e.entityId === id);
     if (teleportEffect) {
@@ -212,10 +226,28 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
 
     context.clearRect(0, 0, canvasWidth, canvasHeight)
 
+    const me = state.entities[currentPlayerId]
+
+    let maxRange = 0
+    if (currentSelectedAction === 'move' || currentSelectedAction === 'melee') {
+      maxRange = 1
+    } else if (currentSelectedAction === 'fireball') {
+      maxRange = 2
+    } else if (currentSelectedAction === 'thunder' || currentSelectedAction === 'teleport') {
+      maxRange = 100
+    }
+
     for (let y = 0; y < state.height; y++) {
       for (let x = 0; x < state.width; x++) {
         context.fillStyle = '#223'
         context.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1)
+
+        if (me && currentSelectedAction && maxRange > 0) {
+          if ((me.x !== x || me.y !== y) && distanceFromTile(me, { x, y }) <= maxRange) {
+            context.fillStyle = 'rgba(0, 162, 255, 0.15)'
+            context.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1)
+          }
+        }
       }
     }
 
@@ -431,13 +463,13 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
 
   canvas.addEventListener('click', e => {
     const tile = getTile(e)
-    const selected = uiStores.selected
+    const selected = currentSelectedAction
     const state = getState()
 
     if (selected === 'move' || selected === 'teleport') {
       dispatch({
         type: selected === 'move' ? 'MOVE' : 'TELEPORT',
-        payload: { id: uiStores.playerId, to: tile },
+        payload: { id: currentPlayerId, to: tile },
       })
     }
     else if (selected === 'melee' || selected === 'fireball' || selected === 'thunder') {
@@ -445,18 +477,18 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
       if (monster) {
         dispatch({
           type: selected === 'melee' ? 'MELEE' : selected === 'fireball' ? 'FIREBALL' : 'THUNDER',
-          payload: { attackerId: uiStores.playerId, targetId: monster.id },
+          payload: { attackerId: currentPlayerId, targetId: monster.id },
         })
         return
       }
       for (const id in state.entities) {
         const entity = state.entities[id]
-        if (entity.x === tile.x && entity.y === tile.y && id !== uiStores.playerId) {
+        if (entity.x === tile.x && entity.y === tile.y && id !== currentPlayerId) {
           dispatch({
             type: selected === 'melee' ? 'MELEE'
                 : selected === 'fireball' ? 'FIREBALL'
                     : 'THUNDER',
-            payload: { attackerId: uiStores.playerId, targetId: id },
+            payload: { attackerId: currentPlayerId, targetId: id },
           })
           break
         }
@@ -476,7 +508,9 @@ export function initGameCanvas(canvas, getState, dispatch, uiStores) {
   return {
     resize,
     destroy() {
-      unsub()
+      unsubState()
+      unsubSelected()
+      unsubPlayerId()
       observer.disconnect()
       window.removeEventListener('resize', resize)
       cancelAnimationFrame(frameId)
