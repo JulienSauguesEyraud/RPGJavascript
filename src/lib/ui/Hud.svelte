@@ -1,9 +1,10 @@
 <script>
   import { gameState, myPlayerId, getPlayersList } from '../stores/gameState.js'
   import { selectedAction } from '../stores/gameUi.js'
-  import NoManaIcon from './NoManaIcon.svelte' // Import de l'icône
+  import NoManaIcon from './NoManaIcon.svelte'
+  import OutOfRangeIcon from './OutOfRangeIcon.svelte'
+  import {distanceFromTile} from "$lib/game/index.js";
 
-  // Coûts en MP des compétences magiques
   const MP_FIREBALL = 4
   const MP_THUNDER = 10
   const MP_TELEPORT = 5
@@ -12,6 +13,9 @@
   const COOLDOWN_ATTACK = $derived(me?.cooldownAttack ?? 5000)
   const EVENT_INTERVAL = 20000
   const EVENT_DURATION = 5000
+
+  const RANGE_MELEE = 1
+  const RANGE_FIREBALL = 2
 
   let now = $state(Date.now())
   setInterval(() => { now = Date.now() }, 100)
@@ -40,6 +44,27 @@
   function timeLeftEvent() {
     if (!activeEvent) return 0
     return Math.max(0, EVENT_DURATION - (now - (activeEvent.startedAt ?? 0)))
+  }
+
+  function hasEntityInRange(action) {
+    if (!me) return false
+
+    let maxRange = 100
+    if (action === 'melee') maxRange = RANGE_MELEE
+    if (action === 'fireball') maxRange = RANGE_FIREBALL
+    if (maxRange === 100) return true
+
+    const players = Object.values($gameState?.entities ?? {}).filter(
+            (entity) => entity.id !== $myPlayerId
+    )
+
+    const monsters = Object.values($gameState?.monsters ?? {})
+
+    const targets = [...players, ...monsters].filter(target => (target.hp ?? 0) > 0)
+
+    return targets.some((target) => {
+      return distanceFromTile(me, target) <= maxRange
+    })
   }
 
   function choose(action) { selectedAction.set(action) }
@@ -110,11 +135,16 @@
     </div>
 
     <div class="action-btn">
-      <button
-              class:active={$selectedAction === 'melee'}
-              disabled={cooldownAttack() > 0 || !me }
-              onclick={() => choose('melee')}
-      >Corps à corps</button>
+      <div class="btn-wrapper">
+        <button
+                class:active={$selectedAction === 'melee'}
+                disabled={cooldownAttack() > 0 || !me || !hasEntityInRange('melee')}
+                onclick={() => choose('melee')}
+        >Corps à corps</button>
+        {#if me && !hasEntityInRange('melee')}
+          <OutOfRangeIcon />
+        {/if}
+      </div>
       <p>(MP:0/Portée:1)</p>
       <div class="bar">
         <div class="bar-fill attack" style="width:{(cooldownAttack()/COOLDOWN_ATTACK)*100}%"></div>
@@ -127,13 +157,16 @@
         <div class="btn-wrapper">
           <button
                   class:active={$selectedAction === 'fireball'}
-                  disabled={cooldownAttack() > 0 || !me || (me?.mp ?? 0) < MP_FIREBALL}
+                  disabled={cooldownAttack() > 0 || !me || (me?.mp ?? 0) < MP_FIREBALL || !hasEntityInRange('fireball')}
                   onclick={() => choose('fireball')}
           >
             Boule de feu
           </button>
           {#if me && me.mp < MP_FIREBALL}
             <NoManaIcon />
+          {/if}
+          {#if me && !hasEntityInRange('fireball')}
+            <OutOfRangeIcon />
           {/if}
         </div>
         <p>(MP:{MP_FIREBALL}/Portée:2)</p>
