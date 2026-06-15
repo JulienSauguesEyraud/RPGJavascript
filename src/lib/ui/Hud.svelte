@@ -43,14 +43,42 @@
 
 <div class="hud">
   <div class="stats">
-    {#each players as player}
-      <div class:is-me={player.id === $myPlayerId}>
-        <strong>{player.id}</strong>
-        [{player.className}]
-        HP: {player.hp}/{player.maxHp}
-        MP: {player.mp}/{player.maxMp}
-      </div>
-    {/each}
+    <div class="players-grid">
+      {#each players as player}
+        <div class="player-card" class:is-me={player.id === $myPlayerId}>
+          <div class="player-header">
+            <strong>{player.id}</strong>
+            <span class="player-class">[{player.className}]</span>
+          </div>
+
+          <div class="gauge-container">
+            <input
+                    type="range"
+                    min="0"
+                    max={player.maxHp}
+                    value={player.hp}
+                    disabled
+                    style="--pct: {Math.min(100, (player.hp / player.maxHp) * 100)}%"
+                    class="gauge-range hp"
+            />
+            <span class="gauge-label">HP: {player.hp}/{player.maxHp}</span>
+          </div>
+
+          <div class="gauge-container">
+            <input
+                    type="range"
+                    min="0"
+                    max={player.maxMp}
+                    value={player.mp}
+                    disabled
+                    style="--pct: {Math.min(100, (player.mp / player.maxMp) * 100)}%"
+                    class="gauge-range mp"
+            />
+            <span class="gauge-label">MP: {player.mp}/{player.maxMp}</span>
+          </div>
+        </div>
+      {/each}
+    </div>
     <div class="event-zone">
       {#if activeEvent}
         <span class="event-active">{activeEvent.type} — {(timeLeftEvent() / 1000).toFixed(1)}s</span>
@@ -131,22 +159,85 @@
     padding: 10px;
     box-sizing: border-box;
     background: rgba(0,0,0,0.75);
-    min-height: 140px;
+    min-height: 170px;
     gap: 10px
   }
   .stats {
     display: flex;
     flex-direction: column;
-    gap: 4px;
   }
+
+  .players-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .player-card {
+    background: rgb(255 255 255 / 0.1);
+    padding: 6px;
+    border-radius: 4px;
+  }
+  .player-card.is-me {
+    border-left: 3px solid transparent;
+    border-left-color: #4cf;
+    background: rgb(76 204 255 / 0.1);
+  }
+  .player-header {
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+
+  .player-class {
+    opacity: 0.6;
+  }
+
+  .gauge-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 14px;
+    margin-top: 3px;
+  }
+
+  .gauge-range {
+    width: 100%;
+    height: 100%;
+    border-radius: 3px;
+  }
+
+  .gauge-range.hp {
+    background: linear-gradient(to right, #ef4444 var(--pct), rgba(0, 0, 0, 0.4) var(--pct));
+  }
+  .gauge-range.mp {
+    background: linear-gradient(to right, #20ccc6 var(--pct), rgba(0, 0, 0, 0.4) var(--pct));
+  }
+
+  .gauge-range::-moz-range-thumb {
+    width: 0;
+    height: 0;
+    border: none;
+  }
+
+  .gauge-label {
+    position: absolute;
+    left: 6px;
+    font-size: 8px;
+    font-weight: bold;
+    text-shadow: 1px 1px 1px #000, -1px -1px 1px #000, 1px -1px 1px #000, -1px 1px 1px #000;
+    pointer-events: none;
+  }
+
   .event-active {
     color: #ffd37a;
     font-weight: bold;
     font-size: 12px;
+    margin-bottom: 5px;
   }
   .event-waiting {
     opacity: 0.5;
     font-size: 12px;
+    margin-bottom: 5px;
   }
   .bar {
     height: 4px;
