@@ -174,14 +174,14 @@
   }
 
   .player-card {
-    background: rgb(255 255 255 / 0.1);
+    background: rgba(255,255,255,0.1);
     padding: 6px;
     border-radius: 4px;
   }
   .player-card.is-me {
     border-left: 3px solid transparent;
     border-left-color: #4cf;
-    background: rgb(76 204 255 / 0.1);
+    background: rgba(76,204,255,0.1);
   }
   .player-header {
     font-size: 13px;
