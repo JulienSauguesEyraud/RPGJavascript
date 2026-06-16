@@ -1,11 +1,9 @@
-import {createEventEffect} from "./index.js";
-import {applyEventEffect, removeEventEffect} from "./applyEventEffect.js";
-
-const EVENT_INTERVAL = 20000
-const EVENT_DURATION = 5000
+import { createEventEffect } from "./index.js";
+import { applyEventEffect, removeEventEffect } from "./applyEventEffect.js";
+import { EVENT_CONFIG } from "../constants.js";
 
 export function checkEventModification(room, now) {
-    if (!room.state.activeEvent && now - room.state.lastEventAt >= EVENT_INTERVAL) {
+    if (!room.state.activeEvent && now - room.state.lastEventAt >= EVENT_CONFIG.INTERVAL) {
         room.state.activeEvent = createEventEffect()
         room.state.activeEvent.startedAt = now
 
@@ -15,11 +13,11 @@ export function checkEventModification(room, now) {
             }
         }
 
-        room.state.log.push(`Événement : ${room.state.activeEvent.type} (5 sec)`)
+        room.state.log.push(`Événement : ${room.state.activeEvent.type} (${EVENT_CONFIG.DURATION / 1000} sec)`)
         return true
     }
 
-    if (room.state.activeEvent && now - room.state.activeEvent.startedAt >= EVENT_DURATION) {
+    if (room.state.activeEvent && now - room.state.activeEvent.startedAt >= EVENT_CONFIG.DURATION) {
 
         for (const id in room.state.entities) {
             if (id.startsWith('player')) {

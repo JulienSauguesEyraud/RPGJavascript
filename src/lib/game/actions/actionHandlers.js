@@ -1,20 +1,18 @@
 import {
-    applyFireball,
-    applyMelee,
-    applyMove, applyTeleport, applyThunder, canFireball,
-    canMelee,
-    canMove, canTeleport, canThunder, checkDeadMonsters,
-    resolveTileTrigger,
-    TILE_EFFECT_TRIGGERS
+    applyFireball, applyMelee, applyMove, applyTeleport, applyThunder,
+    canFireball, canMelee, canMove, canTeleport, canThunder,
+    checkDeadMonsters, resolveTileTrigger, TILE_EFFECT_TRIGGERS
 } from "../index.js";
+import { ACTIONS_CONFIG } from "../constants.js";
 
 function sendToPlayer(room, io, playerId, state) {
     const socketId = room.slots[playerId]
     if (socketId) io.to(socketId).emit('state', state)
 }
 
-function checkAttackCooldown(next, entity, playerId, now, room, io) {
-    if (now - entity.lastAttacked < (entity.cooldownAttack ?? 5000)) {
+function checkAttackCooldown(next, entity, playerId, now, room, io, actionType) {
+    const maxCooldown = entity.cooldownAttack ?? ACTIONS_CONFIG[actionType].cooldown;
+    if (now - entity.lastAttacked < maxCooldown) {
         next.log.push('Attaque en recharge')
         sendToPlayer(room, io, playerId, next)
         return false
@@ -48,7 +46,7 @@ export const ACTION_HANDLERS = {
 
 function moveAction(next, entity, action, playerId, now, room, io) {
     const { to } = action.payload
-    const cooldownMove = entity.cooldownMove ?? 3000
+    const cooldownMove = entity.cooldownMove ?? ACTIONS_CONFIG.move.cooldown
 
     if (now - entity.lastMoved < cooldownMove) {
         next.log.push('Déplacement en recharge')
@@ -70,7 +68,7 @@ function moveAction(next, entity, action, playerId, now, room, io) {
 
 function meleeAction(next, entity, action, playerId, now, room, io) {
     const { targetId } = action.payload
-    if (!checkAttackCooldown(next, entity, playerId, now, room, io)) return
+    if (!checkAttackCooldown(next, entity, playerId, now, room, io, 'melee')) return
     if (!canMelee(next, playerId, targetId)) {
         sendToPlayer(room, io, playerId, next)
         return
@@ -81,7 +79,7 @@ function meleeAction(next, entity, action, playerId, now, room, io) {
 
 function fireballAction(next, entity, action, playerId, now, room, io) {
     const { targetId } = action.payload
-    if (!checkAttackCooldown(next, entity, playerId, now, room, io)) return
+    if (!checkAttackCooldown(next, entity, playerId, now, room, io, 'fireball')) return
     if (!canFireball(next, playerId, targetId)) {
         sendToPlayer(room, io, playerId, next)
         return
@@ -92,7 +90,7 @@ function fireballAction(next, entity, action, playerId, now, room, io) {
 
 function thunderAction(next, entity, action, playerId, now, room, io) {
     const { targetId } = action.payload
-    if (!checkAttackCooldown(next, entity, playerId, now, room, io)) return
+    if (!checkAttackCooldown(next, entity, playerId, now, room, io, 'thunder')) return
     if (!canThunder(next, playerId, targetId)) {
         sendToPlayer(room, io, playerId, next)
         return
@@ -103,7 +101,7 @@ function thunderAction(next, entity, action, playerId, now, room, io) {
 
 function teleportAction(next, entity, action, playerId, now, room, io) {
     const { to } = action.payload
-    if (!checkAttackCooldown(next, entity, playerId, now, room, io)) return
+    if (!checkAttackCooldown(next, entity, playerId, now, room, io, 'teleport')) return
     if (!canTeleport(next, playerId, to)) {
         sendToPlayer(room, io, playerId, next)
         return

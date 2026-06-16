@@ -1,5 +1,5 @@
-import {distanceFromTile, MONSTER_TYPES} from "../index.js";
-import {checkVictory} from "../globalUtils.js";
+import { distanceFromTile, MONSTER_TYPES } from "../index.js";
+import { checkVictory } from "../globalUtils.js";
 
 export function checkMonstersAttacks(room, io, now, code) {
     let changed = false

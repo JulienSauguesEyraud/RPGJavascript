@@ -1,4 +1,5 @@
-import { distanceFromTile } from '../index.js'
+import {distanceFromTile} from "../index.js";
+import {ACTIONS_CONFIG} from "../constants.js";
 
 export function canMove(state, id, to) {
   const actor = state.entities[id]
@@ -22,7 +23,9 @@ export function canMove(state, id, to) {
       return false
     }
   }
-  if (distanceFromTile(actor, to) !== 1) {
+
+  const dist = distanceFromTile(actor, to);
+  if (dist > ACTIONS_CONFIG.move.range || dist === 0) {
     state.log.push('Case hors de portée')
     return false
   }

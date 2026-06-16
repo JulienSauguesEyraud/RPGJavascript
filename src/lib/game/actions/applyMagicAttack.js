@@ -1,4 +1,5 @@
 import { distanceFromTile } from '../index.js'
+import { ACTIONS_CONFIG } from '../constants.js'
 
 export function canFireball(state, attackerId, targetId) {
   const attacker = state.entities[attackerId]
@@ -6,8 +7,9 @@ export function canFireball(state, attackerId, targetId) {
     state.log.push('Attaquant introuvable');
     return false
   }
-  const cost = 4
-  if (attacker.mp < cost) {
+  const config = ACTIONS_CONFIG.fireball;
+
+  if (attacker.mp < config.mp) {
     state.log.push('MP insuffisant');
     return false
   }
@@ -16,18 +18,9 @@ export function canFireball(state, attackerId, targetId) {
     return false
   }
 
-  const target = state.entities[targetId]
+  const target = state.entities[targetId] || state.monsters?.find(m => m.id === targetId)
   if (target) {
-    if (distanceFromTile(attacker, target) > 2) {
-      state.log.push('Cible hors de portée');
-      return false
-    }
-    return true
-  }
-
-  const monster = state.monsters?.find(m => m.id === targetId)
-  if (monster) {
-    if (distanceFromTile(attacker, monster) > 2) {
+    if (distanceFromTile(attacker, target) > config.range) {
       state.log.push('Cible hors de portée');
       return false
     }
@@ -41,22 +34,15 @@ export function canFireball(state, attackerId, targetId) {
 export function applyFireball(state, attackerId, targetId) {
   const next = structuredClone(state)
   const attacker = next.entities[attackerId]
-  const cost = 4
-  const dmg = 8 + (attacker.magicBonus ?? 0)
+  const dmg = ACTIONS_CONFIG.fireball.damage + (attacker.magicBonus ?? 0)
   delete attacker.magicBonus
-  attacker.mp -= cost
-  const target = next.entities[targetId]
+
+  attacker.mp -= ACTIONS_CONFIG.fireball.mp
+  const target = next.entities[targetId] || next.monsters?.find(m => m.id === targetId)
   if (target) {
     target.hp -= dmg
-    next.log.push(`${attackerId} frappe ${targetId} pour ${dmg} dégâts`)
-    return next
+    next.log.push(`${attackerId} lance un sort sur ${targetId} pour ${dmg} dégâts`)
   }
-
-  const monster = next.monsters?.find(m => m.id === targetId)
-  if (monster) {
-    monster.hp -= dmg
-  }
-  next.log.push(`${attackerId} lance un sort sur ${targetId} pour ${dmg} dégâts (-${cost} MP)`)
   return next
 }
 
@@ -66,8 +52,8 @@ export function canThunder(state, attackerId, targetId) {
     state.log.push('Attaquant introuvable');
     return false
   }
-  const cost = 10
-  if (attacker.mp < cost) {
+
+  if (attacker.mp < ACTIONS_CONFIG.thunder.mp) {
     state.log.push('MP insuffisant');
     return false
   }
@@ -76,11 +62,8 @@ export function canThunder(state, attackerId, targetId) {
     return false
   }
 
-  const target = state.entities[targetId]
+  const target = state.entities[targetId] || state.monsters?.find(m => m.id === targetId)
   if (target) return true
-
-  const monster = state.monsters?.find(m => m.id === targetId)
-  if (monster) return true
 
   state.log.push('Cible introuvable')
   return false
@@ -89,22 +72,15 @@ export function canThunder(state, attackerId, targetId) {
 export function applyThunder(state, attackerId, targetId) {
   const next = structuredClone(state)
   const attacker = next.entities[attackerId]
-  const cost = 10
-  const dmg = 14 + (attacker.magicBonus ?? 0)
+  const dmg = ACTIONS_CONFIG.thunder.damage + (attacker.magicBonus ?? 0)
   delete attacker.magicBonus
-  attacker.mp -= cost
-  const target = next.entities[targetId]
+
+  attacker.mp -= ACTIONS_CONFIG.thunder.mp
+  const target = next.entities[targetId] || next.monsters?.find(m => m.id === targetId)
   if (target) {
     target.hp -= dmg
-    next.log.push(`${attackerId} frappe ${targetId} pour ${dmg} dégâts`)
-    return next
+    next.log.push(`${attackerId} lance un sort sur ${targetId} pour ${dmg} dégâts`)
   }
-
-  const monster = next.monsters?.find(m => m.id === targetId)
-  if (monster) {
-    monster.hp -= dmg
-  }
-  next.log.push(`${attackerId} lance un sort sur ${targetId} pour ${dmg} dégâts (-${cost} MP)`)
   return next
 }
 
@@ -130,8 +106,7 @@ export function canTeleport(state, id, to) {
       return false
     }
   }
-  const cost = 5
-  if (actor.mp < cost) {
+  if (actor.mp < ACTIONS_CONFIG.teleport.mp) {
     state.log.push('MP insuffisant');
     return false
   }
@@ -143,8 +118,7 @@ export function applyTeleport(state, id, to) {
   const actor = next.entities[id]
   actor.x = to.x
   actor.y = to.y
-  const cost = 5
-  actor.mp -= cost
+  actor.mp -= ACTIONS_CONFIG.teleport.mp
   next.log.push(`${id} se téléporte en (${to.x},${to.y})`)
   return next
 }
