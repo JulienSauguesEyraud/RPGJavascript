@@ -3,8 +3,9 @@
 
     let { action, active, disabled, cooldown, onclick, children, layout = 'vertical', hideBar = false } = $props()
 
-    const config = ACTIONS_CONFIG[action]
-    const maxCooldown = config?.cooldown ?? 3000
+    const config = $derived(ACTIONS_CONFIG[action])
+    const maxCooldown = $derived(config?.cooldown ?? 3000)
+
     const pct = $derived((cooldown / maxCooldown) * 100)
 </script>
 

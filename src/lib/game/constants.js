@@ -1,9 +1,9 @@
 export const ACTIONS_CONFIG = {
-    move: { label: 'Déplacer', damage:0, mp: 0, range: 1, cooldown: 3000, barColor: '#296f21' },
-    melee: { label: 'Corps à corps', damage:5, mp: 0, range: 1, cooldown: 5000, barColor: '#8c20cc' },
-    fireball: { label: 'Boule de feu', damage:8, mp: 4, range: 2, cooldown: 5000, barColor: '#8c20cc' },
-    thunder: { label: 'Tonnerre', damage:14, mp: 10, range: 100, cooldown: 5000, barColor: '#8c20cc' },
-    teleport: { label: 'Téléportation', damage:0, mp: 5, range: 100, cooldown: 5000, barColor: '#8c20cc' },
+    move: { label: 'Déplacer [D]', damage:0, mp: 0, range: 1, cooldown: 3000, barColor: '#296f21' },
+    melee: { label: 'Corps à corps [C]', damage:5, mp: 0, range: 1, cooldown: 5000, barColor: '#8c20cc' },
+    fireball: { label: 'Boule de feu [F]', damage:8, mp: 4, range: 2, cooldown: 5000, barColor: '#8c20cc' },
+    thunder: { label: 'Tonnerre [T]', damage:14, mp: 10, range: 100, cooldown: 5000, barColor: '#8c20cc' },
+    teleport: { label: 'Téléportation [E]', damage:0, mp: 5, range: 100, cooldown: 5000, barColor: '#8c20cc' },
 }
 
 export const EVENT_CONFIG = {

@@ -25,8 +25,25 @@
 
   function choose(action) { selectedAction.set(action) }
 
+  function handleKeydown(event) {
+    const keyMap = {
+      'd': 'move',
+      'c': 'melee',
+      'f': 'fireball',
+      'e': 'teleport',
+      't': 'thunder'
+    };
+
+    const action = keyMap[event.key.toLowerCase()];
+    if (action) {
+      choose(action);
+    }
+  }
+
   const magicSpells = ['fireball', 'thunder', 'teleport'];
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <div class="lastLog">{gameLogs[gameLogs.length - 1]}</div>
 
