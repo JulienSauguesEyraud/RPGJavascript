@@ -1,5 +1,6 @@
 import { ACTIONS_CONFIG, PLAYER_COLORS } from '../game/constants.js'
 import { distanceFromTile } from "../game/index.js"
+import { CLASSES } from "$lib/game/classes/classes.js";
 
 export function drawSpinner(ctx, x, y, radius, pct, color) {
     ctx.beginPath()
@@ -104,8 +105,13 @@ export function drawEntities(ctx, entities, currentPlayerId, getDisplayPos, now,
         ctx.fillText(`${entity.hp}/${entity.maxHp}`, px, py - 4)
         ctx.fillText(`MP:${entity.mp}`, px, py + tileSize * 0.22)
 
-        const movePct = Math.min(1, (nowForCooldown - (entity.lastMoved ?? 0)) / (entity.cooldownMove ?? 3000))
-        const attackPct = Math.min(1, (nowForCooldown - (entity.lastAttacked ?? 0)) / (entity.cooldownAttack ?? 5000))
+        const classConfig = CLASSES[entity.className]
+        const maxMoveCd = entity.cooldownMove ?? classConfig?.cooldownMove ?? 3000
+        const maxAttackCd = entity.cooldownAttack ?? classConfig?.cooldownAttack ?? 5000
+
+        const movePct = Math.min(1, (nowForCooldown - (entity.lastMoved ?? 0)) / maxMoveCd)
+        const attackPct = Math.min(1, (nowForCooldown - (entity.lastAttacked ?? 0)) / maxAttackCd)
+
         const spinnerRadius = tileSize * 0.12
         const offX = tileSize * 0.37
         const offY = tileSize * 0.35

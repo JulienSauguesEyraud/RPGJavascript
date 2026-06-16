@@ -4,30 +4,67 @@ import {
     checkMonstersAttacks,
     createInitialState,
 } from "../src/lib/game/index.js";
-import {ACTION_HANDLERS} from "../src/lib/game/actions/actionHandlers.js";
-import {checkVictory} from "../src/lib/game/globalUtils.js";
+import { ACTION_HANDLERS } from "../src/lib/game/actions/actionHandlers.js";
+import { checkVictory } from "../src/lib/game/globalUtils.js";
 
 const rooms = {}
+
+const TICK_RATE = 50
+
+function processTick(io, code) {
+    const room = rooms[code]
+    if (!room || room.status !== 'playing') return
+
+    const now = Date.now()
+    let changed = false
+
+    while (room.actionQueue.length > 0) {
+        const { playerId, action } = room.actionQueue.shift()
+
+        let next = structuredClone(room.state)
+        const entity = next.entities[playerId]
+        if (!entity) continue
+
+        const handler = ACTION_HANDLERS[action.type]
+        if (!handler) continue
+
+        const resultState = handler({ next, entity, action, playerId, now, room, io })
+        if (resultState) {
+            next = resultState
+
+            for (const key in next.entities) {
+                if (key.startsWith('player') && next.entities[key].hp <= 0) {
+                    next.log.push(`${key} est mort !`)
+                    delete next.entities[key]
+                }
+            }
+            room.state = next
+            changed = true
+        }
+    }
+
+    if (checkClassesTimeSpecificities(room, io, now, code)) changed = true
+    if (checkMonstersAttacks(room, io, now, code)) changed = true
+    if (checkEventModification(room, now)) changed = true
+
+    if (changed) {
+        if (checkVictory(io, room, code)) {
+            clearInterval(room.interval)
+            return
+        }
+        broadcastRoom(io, code)
+    }
+}
 
 function startRoomLoop(io, code) {
     const room = rooms[code]
     if (!room) return
 
+    if (room.interval) clearInterval(room.interval)
+
     room.interval = setInterval(() => {
-        const room = rooms[code]
-        if (!room || room.status !== 'playing') {
-            clearInterval(room.interval);
-            return;
-        }
-
-        const now = Date.now()
-        let changed = false
-
-        if (checkClassesTimeSpecificities(room, io, now, code)) changed = true
-        if (checkMonstersAttacks(room, io, now, code)) changed = true
-        if (checkEventModification(room, now)) changed = true
-        if (changed) broadcastRoom(io, code)
-    }, 1000)
+        processTick(io, code)
+    }, TICK_RATE)
 }
 
 function generateCode() {
@@ -65,6 +102,7 @@ export function handleCreate(socket, className) {
         slots: { player1: socket.id, player2: null, player3: null, player4: null },
         classes: { player1: className ?? 'warrior', player2: null, player3: null, player4: null },
         interval: null,
+        actionQueue: [],
     }
     socket.join(code)
     socket.data.code = code
@@ -134,6 +172,7 @@ export function handleReset(io, socket) {
     const fresh = createInitialState(room.classes)
     fresh.lastEventAt = Date.now()
     room.state = fresh
+    room.actionQueue = []
     broadcastRoom(io, socket.data.code)
 }
 
@@ -182,30 +221,7 @@ export function handleAction(io, socket, action) {
     const code = socket.data.code
     const playerId = socket.data.playerId
     const room = rooms[code]
-    if (!room || !room.state) return
+    if (!room || !room.state || room.status !== 'playing') return
 
-    const now = Date.now()
-    let next = structuredClone(room.state)
-    const entity = next.entities[playerId]
-    if (!entity) return
-
-    const handler = ACTION_HANDLERS[action.type]
-    if (!handler) return
-
-    const resultState = handler({ next, entity, action, playerId, now, room, io })
-    if (!resultState) return
-    next = resultState
-
-    for (const key in next.entities) {
-        if (key.startsWith('player') && next.entities[key].hp <= 0) {
-            next.log.push(`${key} est mort !`)
-            delete next.entities[key]
-        }
-    }
-    room.state = next
-
-    if (checkVictory(io, room, code)) {
-        return
-    }
-    broadcastRoom(io, code)
+    room.actionQueue.push({ playerId, action })
 }

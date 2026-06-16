@@ -3,6 +3,7 @@
   import { selectedAction } from '../stores/gameUi.js'
   import { hasEntityInRange } from '../game/globalUtils.js'
   import { ACTIONS_CONFIG, EVENT_CONFIG } from '../game/constants.js'
+  import { CLASSES} from "../game/classes/classes.js";
 
   import NoManaIcon from './NoManaIcon.svelte'
   import OutOfRangeIcon from './OutOfRangeIcon.svelte'
@@ -17,8 +18,12 @@
   const gameLogs = $derived($gameState?.log ?? [])
   const players = $derived(getPlayersList($gameState))
 
-  const cdMove = $derived(me ? Math.max(0, ACTIONS_CONFIG.move.cooldown - (now - (me.lastMoved ?? 0))) : 0)
-  const cdAttack = $derived(me ? Math.max(0, ACTIONS_CONFIG.melee.cooldown - (now - (me.lastAttacked ?? 0))) : 0)
+  // Récupération dynamique des cooldowns de la classe
+  const maxMoveCd = $derived(me ? CLASSES[me.className]?.cooldownMove ?? 3000 : 3000)
+  const maxAttackCd = $derived(me ? CLASSES[me.className]?.cooldownAttack ?? 5000 : 5000)
+
+  const cdMove = $derived(me ? Math.max(0, maxMoveCd - (now - (me.lastMoved ?? 0))) : 0)
+  const cdAttack = $derived(me ? Math.max(0, maxAttackCd - (now - (me.lastAttacked ?? 0))) : 0)
 
   const timeUntilEvent = $derived((!$gameState || activeEvent) ? 0 : Math.max(0, EVENT_CONFIG.INTERVAL - (now - lastEventAt)))
   const timeLeftEvent = $derived(!activeEvent ? 0 : Math.max(0, EVENT_CONFIG.DURATION - (now - (activeEvent.startedAt ?? 0))))
@@ -26,6 +31,8 @@
   function choose(action) { selectedAction.set(action) }
 
   function handleKeydown(event) {
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
+
     const keyMap = {
       'd': 'move',
       'c': 'melee',
@@ -113,7 +120,7 @@
 
       <div class="shared-cd">
         <div class="bar">
-          <div class="bar-fill" style="width: {(cdAttack / ACTIONS_CONFIG.melee.cooldown) * 100}%; background: {ACTIONS_CONFIG.fireball.barColor};"></div>
+          <div class="bar-fill" style="width: {(cdAttack / maxAttackCd) * 100}%; background: {ACTIONS_CONFIG.fireball.barColor};"></div>
         </div>
         {#if cdAttack > 0}
           <span class="cd-label">{(cdAttack / 1000).toFixed(1)}s</span>
