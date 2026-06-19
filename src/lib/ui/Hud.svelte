@@ -18,7 +18,6 @@
   const gameLogs = $derived($gameState?.log ?? [])
   const players = $derived(getPlayersList($gameState))
 
-  // Récupération dynamique des cooldowns de la classe
   const maxMoveCd = $derived(me ? CLASSES[me.className]?.cooldownMove ?? 3000 : 3000)
   const maxAttackCd = $derived(me ? CLASSES[me.className]?.cooldownAttack ?? 5000 : 5000)
 
@@ -189,6 +188,7 @@
     width: 100%;
     height: 100%;
     border-radius: 3px;
+    -webkit-appearance: none;
   }
 
   .gauge-range.hp {
@@ -202,6 +202,13 @@
     width: 0;
     height: 0;
     border: none;
+  }
+
+  .gauge-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 0;
+    width: 0;
+    display: none;
   }
 
   .gauge-label {
